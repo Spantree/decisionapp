@@ -28,6 +28,7 @@
   border: 1px solid var(--pugh-border-color);
   padding: 0.5rem 0.6rem;
   text-align: center;
+  background: var(--pugh-bg);
 }
 .pugh-table thead th {
   background: var(--pugh-head-bg);

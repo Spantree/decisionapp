@@ -180,24 +180,6 @@ Call out a specific column:
 
 The highlighted column gets a primary-color header and bordered cells.
 
-## Demo site
-
-A local demo site showcases the component with several `highlight` prop examples:
-
-```bash
-npm install
-npm run demo
-```
-
-Then open http://localhost:5173. The demo includes:
-
-1. **Basic usage** — no highlight, default rendering
-2. **Static highlight** — `highlight="Vue"` and `highlight="Svelte"` on separate matrices
-3. **Interactive toggle** — buttons to switch the highlighted column or remove it entirely
-4. **Show winner** — toggle `showWinner` to crown the highest weighted-total column in gold
-
-The demo also has a global dark mode toggle. All demo files live in `demo/` and are excluded from the published package.
-
 ## Development
 
 ```bash

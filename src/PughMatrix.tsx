@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import type { ScoreEntry } from './types';
 import './pugh-matrix.css';
 
@@ -11,22 +11,23 @@ export interface PughMatrixProps {
   isDark?: boolean;
 }
 
+const scoreColorCache = new Map<string, { bg: string; text: string }>();
+
 function getScoreColor(
   score: number,
   isDark: boolean,
 ): { bg: string; text: string } {
+  const key = `${score}-${isDark}`;
+  const cached = scoreColorCache.get(key);
+  if (cached) return cached;
+
   const ratio = Math.max(0, Math.min(1, (score - 1) / 9));
   const hue = ratio * 120;
-  if (isDark) {
-    return {
-      bg: `hsl(${hue}, 45%, 22%)`,
-      text: `hsl(${hue}, 60%, 78%)`,
-    };
-  }
-  return {
-    bg: `hsl(${hue}, 75%, 90%)`,
-    text: `hsl(${hue}, 80%, 25%)`,
-  };
+  const result = isDark
+    ? { bg: `hsl(${hue}, 45%, 22%)`, text: `hsl(${hue}, 60%, 78%)` }
+    : { bg: `hsl(${hue}, 75%, 90%)`, text: `hsl(${hue}, 80%, 25%)` };
+  scoreColorCache.set(key, result);
+  return result;
 }
 
 export default function PughMatrix({
@@ -43,8 +44,10 @@ export default function PughMatrix({
 
   const [showTotals, setShowTotals] = useState(false);
 
-  const weightedTotals = useMemo(() => {
+  const { weightedTotals, maxTotal, winner } = useMemo(() => {
     const totals: Record<string, number> = {};
+    let max = -Infinity;
+    let best = '';
     for (const tool of tools) {
       let total = 0;
       for (const criterion of criteria) {
@@ -53,15 +56,19 @@ export default function PughMatrix({
         const weight = weights[criterion] ?? 10;
         total += score * weight;
       }
-      totals[tool] = Math.round(total * 10) / 10;
+      const rounded = Math.round(total * 10) / 10;
+      totals[tool] = rounded;
+      if (rounded > max) {
+        max = rounded;
+        best = tool;
+      }
     }
-    return totals;
-  }, [criteria, tools, scores, weights]);
-
-  const maxTotal = useMemo(
-    () => Math.max(...Object.values(weightedTotals)),
-    [weightedTotals],
-  );
+    return {
+      weightedTotals: totals,
+      maxTotal: max,
+      winner: showWinner ? best : null,
+    };
+  }, [criteria, tools, scores, weights, showWinner]);
 
   const handleWeightChange = (criterion: string, value: string) => {
     if (value === '') {
@@ -75,19 +82,6 @@ export default function PughMatrix({
   };
 
   const isHighlighted = (tool: string) => highlight && tool === highlight;
-
-  const winner = useMemo(() => {
-    if (!showWinner) return null;
-    let best = '';
-    for (const tool of tools) {
-      if (weightedTotals[tool] === maxTotal) {
-        best = tool;
-        break;
-      }
-    }
-    return best;
-  }, [showWinner, tools, weightedTotals, maxTotal]);
-
   const isWinner = (tool: string) => winner && tool === winner;
 
   return (

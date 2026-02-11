@@ -27,19 +27,16 @@ module.exports = __toCommonJS(index_exports);
 // src/PughMatrix.tsx
 var import_react = require("react");
 var import_jsx_runtime = require("react/jsx-runtime");
+var scoreColorCache = /* @__PURE__ */ new Map();
 function getScoreColor(score, isDark) {
+  const key = `${score}-${isDark}`;
+  const cached = scoreColorCache.get(key);
+  if (cached) return cached;
   const ratio = Math.max(0, Math.min(1, (score - 1) / 9));
   const hue = ratio * 120;
-  if (isDark) {
-    return {
-      bg: `hsl(${hue}, 45%, 22%)`,
-      text: `hsl(${hue}, 60%, 78%)`
-    };
-  }
-  return {
-    bg: `hsl(${hue}, 75%, 90%)`,
-    text: `hsl(${hue}, 80%, 25%)`
-  };
+  const result = isDark ? { bg: `hsl(${hue}, 45%, 22%)`, text: `hsl(${hue}, 60%, 78%)` } : { bg: `hsl(${hue}, 75%, 90%)`, text: `hsl(${hue}, 80%, 25%)` };
+  scoreColorCache.set(key, result);
+  return result;
 }
 function PughMatrix({
   criteria,
@@ -53,8 +50,10 @@ function PughMatrix({
     () => Object.fromEntries(criteria.map((c) => [c, 10]))
   );
   const [showTotals, setShowTotals] = (0, import_react.useState)(false);
-  const weightedTotals = (0, import_react.useMemo)(() => {
+  const { weightedTotals, maxTotal, winner } = (0, import_react.useMemo)(() => {
     const totals = {};
+    let max = -Infinity;
+    let best = "";
     for (const tool of tools) {
       let total = 0;
       for (const criterion of criteria) {
@@ -63,14 +62,19 @@ function PughMatrix({
         const weight = weights[criterion] ?? 10;
         total += score * weight;
       }
-      totals[tool] = Math.round(total * 10) / 10;
+      const rounded = Math.round(total * 10) / 10;
+      totals[tool] = rounded;
+      if (rounded > max) {
+        max = rounded;
+        best = tool;
+      }
     }
-    return totals;
-  }, [criteria, tools, scores, weights]);
-  const maxTotal = (0, import_react.useMemo)(
-    () => Math.max(...Object.values(weightedTotals)),
-    [weightedTotals]
-  );
+    return {
+      weightedTotals: totals,
+      maxTotal: max,
+      winner: showWinner ? best : null
+    };
+  }, [criteria, tools, scores, weights, showWinner]);
   const handleWeightChange = (criterion, value) => {
     if (value === "") {
       setWeights((prev) => ({ ...prev, [criterion]: 0 }));
@@ -82,17 +86,6 @@ function PughMatrix({
     }
   };
   const isHighlighted = (tool) => highlight && tool === highlight;
-  const winner = (0, import_react.useMemo)(() => {
-    if (!showWinner) return null;
-    let best = "";
-    for (const tool of tools) {
-      if (weightedTotals[tool] === maxTotal) {
-        best = tool;
-        break;
-      }
-    }
-    return best;
-  }, [showWinner, tools, weightedTotals, maxTotal]);
   const isWinner = (tool) => winner && tool === winner;
   return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `pugh-container${isDark ? " pugh-dark" : ""}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("table", { className: "pugh-table", children: [

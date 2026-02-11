@@ -28,15 +28,18 @@ import 'decisionapp/styles.css';
 const criteria = ['Cost', 'Speed', 'Quality'];
 const tools = ['Option A', 'Option B', 'Option C'];
 const scores = [
-  { id: '1', tool: 'Option A', criterion: 'Cost', score: 8, label: 'Low', timestamp: Date.now() },
-  { id: '2', tool: 'Option A', criterion: 'Speed', score: 6, label: 'Medium', timestamp: Date.now() },
-  { id: '3', tool: 'Option A', criterion: 'Quality', score: 9, label: 'Excellent', timestamp: Date.now() },
-  { id: '4', tool: 'Option B', criterion: 'Cost', score: 5, label: 'Medium', timestamp: Date.now() },
-  { id: '5', tool: 'Option B', criterion: 'Speed', score: 9, label: 'Fast', timestamp: Date.now() },
-  { id: '6', tool: 'Option B', criterion: 'Quality', score: 7, label: 'Good', timestamp: Date.now() },
-  { id: '7', tool: 'Option C', criterion: 'Cost', score: 3, label: 'High', timestamp: Date.now() },
-  { id: '8', tool: 'Option C', criterion: 'Speed', score: 4, label: 'Slow', timestamp: Date.now() },
-  { id: '9', tool: 'Option C', criterion: 'Quality', score: 10, label: 'Best', timestamp: Date.now() },
+  { id: '1', tool: 'Option A', criterion: 'Cost', score: 8, label: 'Low', timestamp: 1707600000000 },
+  { id: '2', tool: 'Option A', criterion: 'Speed', score: 6, label: 'Medium', timestamp: 1707600000000 },
+  { id: '3', tool: 'Option A', criterion: 'Quality', score: 9, label: 'Excellent', timestamp: 1707600000000 },
+  { id: '4', tool: 'Option B', criterion: 'Cost', score: 5, label: 'Medium', timestamp: 1707600000000 },
+  { id: '5', tool: 'Option B', criterion: 'Speed', score: 9, label: 'Fast', timestamp: 1707600000000 },
+  { id: '6', tool: 'Option B', criterion: 'Quality', score: 7, label: 'Good', timestamp: 1707600000000 },
+  { id: '7', tool: 'Option C', criterion: 'Cost', score: 3, label: 'High', timestamp: 1707600000000 },
+  { id: '8', tool: 'Option C', criterion: 'Speed', score: 4, label: 'Slow', timestamp: 1707600000000 },
+  { id: '9', tool: 'Option C', criterion: 'Quality', score: 10, label: 'Best', timestamp: 1707600000000 },
+
+  // Revised score for the same cell — latest timestamp wins, both show in tooltip
+  { id: '10', tool: 'Option A', criterion: 'Cost', score: 6, label: 'Revised', comment: 'Hidden fees discovered', timestamp: 1707686400000 },
 ];
 
 function App() {

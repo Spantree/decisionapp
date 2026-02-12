@@ -171,20 +171,20 @@ function PughMatrix({
   return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Theme, { appearance: isDark ? "dark" : "light", accentColor: "green", hasBackground: false, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `pugh-container${isDark ? " pugh-dark" : ""}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_themes.Table.Root, { variant: "surface", size: "2", children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.Header, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_themes.Table.Row, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.ColumnHeaderCell, { justify: "start", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Text, { weight: "bold", highContrast: true, children: "Criterion" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.ColumnHeaderCell, { width: "72px", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Text, { weight: "bold", highContrast: true, children: "Weight" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.ColumnHeaderCell, { justify: "start", children: "Criterion" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.ColumnHeaderCell, { width: "72px", children: "Weight" }),
         tools.map((tool) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           import_themes.Table.ColumnHeaderCell,
           {
             className: `pugh-tool-header${isWinner(tool) ? " pugh-winner-header" : isHighlighted(tool) ? " pugh-highlight-header" : ""}`,
-            children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Text, { weight: "bold", highContrast: true, children: isWinner(tool) ? `\u{1F451} ${tool}` : tool })
+            children: isWinner(tool) ? `\u{1F451} ${tool}` : tool
           },
           tool
         ))
       ] }) }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_themes.Table.Body, { children: [
         criteria.map((criterion) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_themes.Table.Row, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.RowHeaderCell, { className: "pugh-criterion-cell", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Text, { weight: "bold", highContrast: true, children: criterion }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.RowHeaderCell, { className: "pugh-criterion-cell", children: criterion }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.Cell, { className: "pugh-weight-cell", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
             "input",
             {
@@ -294,7 +294,7 @@ function PughMatrix({
           })
         ] }, criterion)),
         showTotals && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_themes.Table.Row, { className: "pugh-total-row", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.RowHeaderCell, { className: "pugh-total-label", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Text, { weight: "bold", highContrast: true, children: "Weighted Total" }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.RowHeaderCell, { className: "pugh-total-label", children: "Weighted Total" }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.Cell, { className: "pugh-weight-cell" }),
           tools.map((tool) => {
             const total = weightedTotals[tool];

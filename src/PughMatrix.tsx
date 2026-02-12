@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { HoverCard, Table, Text, Theme } from '@radix-ui/themes';
+import { HoverCard, Table, Theme } from '@radix-ui/themes';
 import type { ScoreEntry } from './types';
 import './pugh-matrix.css';
 
@@ -194,14 +194,14 @@ export default function PughMatrix({
         <Table.Root variant="surface" size="2">
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeaderCell justify="start"><Text weight="bold" highContrast>Criterion</Text></Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell width="72px"><Text weight="bold" highContrast>Weight</Text></Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell justify="start">Criterion</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell width="72px">Weight</Table.ColumnHeaderCell>
               {tools.map((tool) => (
                 <Table.ColumnHeaderCell
                   key={tool}
                   className={`pugh-tool-header${isWinner(tool) ? ' pugh-winner-header' : isHighlighted(tool) ? ' pugh-highlight-header' : ''}`}
                 >
-                  <Text weight="bold" highContrast>{isWinner(tool) ? `👑 ${tool}` : tool}</Text>
+                  {isWinner(tool) ? `👑 ${tool}` : tool}
                 </Table.ColumnHeaderCell>
               ))}
             </Table.Row>
@@ -209,7 +209,7 @@ export default function PughMatrix({
           <Table.Body>
             {criteria.map((criterion) => (
               <Table.Row key={criterion}>
-                <Table.RowHeaderCell className="pugh-criterion-cell"><Text weight="bold" highContrast>{criterion}</Text></Table.RowHeaderCell>
+                <Table.RowHeaderCell className="pugh-criterion-cell">{criterion}</Table.RowHeaderCell>
                 <Table.Cell className="pugh-weight-cell">
                   <input
                     type="text"
@@ -328,7 +328,7 @@ export default function PughMatrix({
             ))}
             {showTotals && (
               <Table.Row className="pugh-total-row">
-                <Table.RowHeaderCell className="pugh-total-label"><Text weight="bold" highContrast>Weighted Total</Text></Table.RowHeaderCell>
+                <Table.RowHeaderCell className="pugh-total-label">Weighted Total</Table.RowHeaderCell>
                 <Table.Cell className="pugh-weight-cell" />
                 {tools.map((tool) => {
                   const total = weightedTotals[tool];

@@ -18,6 +18,9 @@
   --pugh-text: #e3e3e3;
   --pugh-primary: #4caf7d;
 }
+.pugh-container :is(th, [role=columnheader], [role=rowheader]) {
+  color: var(--pugh-head-text);
+}
 .pugh-criterion-cell {
   font-weight: 600;
   white-space: nowrap;

@@ -1,5 +1,6 @@
 import type { Preview } from '@storybook/react-vite'
 import { create } from 'storybook/theming/create';
+import '@radix-ui/themes/styles.css';
 
 const docsTheme = create({
   base: 'light',

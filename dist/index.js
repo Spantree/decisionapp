@@ -266,10 +266,12 @@ function PughMatrix({
                       ] })
                     ]
                   }
-                ) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pugh-score-number", children: score }),
-                  label ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pugh-score-label", children: label }) : null,
-                  history && history.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "pugh-history-tooltip", children: history.map((h) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "pugh-history-entry", children: [
+                ) : history && history.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_themes.HoverCard.Root, { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.HoverCard.Trigger, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "pugh-score-trigger", children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pugh-score-number", children: score }),
+                    label ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pugh-score-label", children: label }) : null
+                  ] }) }),
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.HoverCard.Content, { size: "1", maxWidth: "280px", children: history.map((h) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "pugh-history-entry", children: [
                     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "pugh-history-score", children: [
                       h.score,
                       " \u2014 ",
@@ -281,7 +283,10 @@ function PughMatrix({
                       "\u201D"
                     ] }) : null,
                     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "pugh-history-date", children: formatDate(h.timestamp) })
-                  ] }, h.id)) }) : null
+                  ] }, h.id)) })
+                ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pugh-score-number", children: score }),
+                  label ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pugh-score-label", children: label }) : null
                 ] })
               },
               tool

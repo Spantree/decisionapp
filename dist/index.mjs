@@ -1,6 +1,6 @@
 // src/PughMatrix.tsx
 import { useState, useMemo } from "react";
-import { Table, Theme } from "@radix-ui/themes";
+import { HoverCard, Table, Theme } from "@radix-ui/themes";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 var scoreColorCache = /* @__PURE__ */ new Map();
 function getScoreColor(score, isDark) {
@@ -240,10 +240,12 @@ function PughMatrix({
                       ] })
                     ]
                   }
-                ) : /* @__PURE__ */ jsxs(Fragment, { children: [
-                  /* @__PURE__ */ jsx("span", { className: "pugh-score-number", children: score }),
-                  label ? /* @__PURE__ */ jsx("span", { className: "pugh-score-label", children: label }) : null,
-                  history && history.length > 0 ? /* @__PURE__ */ jsx("div", { className: "pugh-history-tooltip", children: history.map((h) => /* @__PURE__ */ jsxs("div", { className: "pugh-history-entry", children: [
+                ) : history && history.length > 0 ? /* @__PURE__ */ jsxs(HoverCard.Root, { children: [
+                  /* @__PURE__ */ jsx(HoverCard.Trigger, { children: /* @__PURE__ */ jsxs("span", { className: "pugh-score-trigger", children: [
+                    /* @__PURE__ */ jsx("span", { className: "pugh-score-number", children: score }),
+                    label ? /* @__PURE__ */ jsx("span", { className: "pugh-score-label", children: label }) : null
+                  ] }) }),
+                  /* @__PURE__ */ jsx(HoverCard.Content, { size: "1", maxWidth: "280px", children: history.map((h) => /* @__PURE__ */ jsxs("div", { className: "pugh-history-entry", children: [
                     /* @__PURE__ */ jsxs("div", { className: "pugh-history-score", children: [
                       h.score,
                       " \u2014 ",
@@ -255,7 +257,10 @@ function PughMatrix({
                       "\u201D"
                     ] }) : null,
                     /* @__PURE__ */ jsx("div", { className: "pugh-history-date", children: formatDate(h.timestamp) })
-                  ] }, h.id)) }) : null
+                  ] }, h.id)) })
+                ] }) : /* @__PURE__ */ jsxs(Fragment, { children: [
+                  /* @__PURE__ */ jsx("span", { className: "pugh-score-number", children: score }),
+                  label ? /* @__PURE__ */ jsx("span", { className: "pugh-score-label", children: label }) : null
                 ] })
               },
               tool

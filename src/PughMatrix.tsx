@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Table, Theme } from '@radix-ui/themes';
+import { HoverCard, Table, Theme } from '@radix-ui/themes';
 import type { ScoreEntry } from './types';
 import './pugh-matrix.css';
 
@@ -285,30 +285,39 @@ export default function PughMatrix({
                             </button>
                           </div>
                         </div>
+                      ) : history && history.length > 0 ? (
+                        <HoverCard.Root>
+                          <HoverCard.Trigger>
+                            <span className="pugh-score-trigger">
+                              <span className="pugh-score-number">{score}</span>
+                              {label ? (
+                                <span className="pugh-score-label">{label}</span>
+                              ) : null}
+                            </span>
+                          </HoverCard.Trigger>
+                          <HoverCard.Content size="1" maxWidth="280px">
+                            {history.map((h) => (
+                              <div key={h.id} className="pugh-history-entry">
+                                <div className="pugh-history-score">
+                                  {h.score} &mdash; {h.label}
+                                </div>
+                                {h.comment ? (
+                                  <div className="pugh-history-comment">
+                                    &ldquo;{h.comment}&rdquo;
+                                  </div>
+                                ) : null}
+                                <div className="pugh-history-date">
+                                  {formatDate(h.timestamp)}
+                                </div>
+                              </div>
+                            ))}
+                          </HoverCard.Content>
+                        </HoverCard.Root>
                       ) : (
                         <>
                           <span className="pugh-score-number">{score}</span>
                           {label ? (
                             <span className="pugh-score-label">{label}</span>
-                          ) : null}
-                          {history && history.length > 0 ? (
-                            <div className="pugh-history-tooltip">
-                              {history.map((h) => (
-                                <div key={h.id} className="pugh-history-entry">
-                                  <div className="pugh-history-score">
-                                    {h.score} &mdash; {h.label}
-                                  </div>
-                                  {h.comment ? (
-                                    <div className="pugh-history-comment">
-                                      &ldquo;{h.comment}&rdquo;
-                                    </div>
-                                  ) : null}
-                                  <div className="pugh-history-date">
-                                    {formatDate(h.timestamp)}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
                           ) : null}
                         </>
                       )}

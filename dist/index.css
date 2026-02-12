@@ -44,31 +44,11 @@
   transition: background-color 0.15s ease;
   min-width: 90px;
   vertical-align: middle;
-  position: relative;
 }
 .pugh-score-cell-editable {
   cursor: pointer;
 }
-.pugh-history-tooltip {
-  display: none;
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  min-width: 200px;
-  max-width: 280px;
-  padding: 0.5rem;
-  border-radius: 6px;
-  background: var(--pugh-head-bg);
-  color: var(--pugh-head-text);
-  border: 1px solid var(--pugh-border-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  text-align: left;
-  font-size: 0.78rem;
-  pointer-events: none;
-}
-.pugh-score-cell:hover > .pugh-history-tooltip {
+.pugh-score-trigger {
   display: block;
 }
 .pugh-history-entry {

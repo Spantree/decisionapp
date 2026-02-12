@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Table, Theme } from '@radix-ui/themes';
 import type { ScoreEntry } from './types';
 import './pugh-matrix.css';
 
@@ -188,163 +189,165 @@ export default function PughMatrix({
     editingCell?.tool === tool && editingCell?.criterion === criterion;
 
   return (
-    <div className={`pugh-container${isDark ? ' pugh-dark' : ''}`}>
-      <table className="pugh-table">
-        <thead>
-          <tr>
-            <th className="pugh-criterion-header">Criterion</th>
-            <th className="pugh-weight-header">Weight</th>
-            {tools.map((tool) => (
-              <th
-                key={tool}
-                className={`pugh-tool-header${isWinner(tool) ? ' pugh-winner-header' : isHighlighted(tool) ? ' pugh-highlight-header' : ''}`}
-              >
-                {isWinner(tool) ? `👑 ${tool}` : tool}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {criteria.map((criterion) => (
-            <tr key={criterion}>
-              <td className="pugh-criterion-cell">{criterion}</td>
-              <td className="pugh-weight-cell">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={weights[criterion]}
-                  onChange={(e) => handleWeightChange(criterion, e.target.value)}
-                  className="pugh-weight-input"
-                />
-              </td>
-              {tools.map((tool) => {
-                const cellKey = `${tool}\0${criterion}`;
-                const entry = latestByCell.get(cellKey);
-                const score = entry?.score ?? 0;
-                const label = entry?.label ?? '';
-                const colors = getScoreColor(score, isDark);
-                const history = historyByCell.get(cellKey);
-                const editing = isEditing(tool, criterion);
+    <Theme appearance={isDark ? 'dark' : 'light'} accentColor="green" hasBackground={false}>
+      <div className={`pugh-container${isDark ? ' pugh-dark' : ''}`}>
+        <Table.Root variant="surface" size="2">
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeaderCell justify="start">Criterion</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell width="72px">Weight</Table.ColumnHeaderCell>
+              {tools.map((tool) => (
+                <Table.ColumnHeaderCell
+                  key={tool}
+                  className={`pugh-tool-header${isWinner(tool) ? ' pugh-winner-header' : isHighlighted(tool) ? ' pugh-highlight-header' : ''}`}
+                >
+                  {isWinner(tool) ? `👑 ${tool}` : tool}
+                </Table.ColumnHeaderCell>
+              ))}
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {criteria.map((criterion) => (
+              <Table.Row key={criterion}>
+                <Table.RowHeaderCell className="pugh-criterion-cell">{criterion}</Table.RowHeaderCell>
+                <Table.Cell className="pugh-weight-cell">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={weights[criterion]}
+                    onChange={(e) => handleWeightChange(criterion, e.target.value)}
+                    className="pugh-weight-input"
+                  />
+                </Table.Cell>
+                {tools.map((tool) => {
+                  const cellKey = `${tool}\0${criterion}`;
+                  const entry = latestByCell.get(cellKey);
+                  const score = entry?.score ?? 0;
+                  const label = entry?.label ?? '';
+                  const colors = getScoreColor(score, isDark);
+                  const history = historyByCell.get(cellKey);
+                  const editing = isEditing(tool, criterion);
 
-                return (
-                  <td
-                    key={tool}
-                    className={`pugh-score-cell${onScoreAdd ? ' pugh-score-cell-editable' : ''}${isWinner(tool) ? ' pugh-winner-cell' : isHighlighted(tool) ? ' pugh-highlight-cell' : ''}`}
-                    style={{
-                      backgroundColor: colors.bg,
-                      color: colors.text,
-                    }}
-                    onClick={() => handleCellClick(tool, criterion)}
-                  >
-                    {editing ? (
-                      <div
-                        className="pugh-edit-form"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="Score (1-10)"
-                          value={editScore}
-                          onChange={(e) => handleEditScoreChange(e.target.value)}
-                          onKeyDown={handleEditKeyDown}
-                          className="pugh-edit-input"
-                          autoFocus
-                        />
-                        <input
-                          type="text"
-                          placeholder="Label"
-                          value={editLabel}
-                          onChange={(e) => setEditLabel(e.target.value)}
-                          onKeyDown={handleEditKeyDown}
-                          className="pugh-edit-input"
-                          maxLength={30}
-                        />
-                        <textarea
-                          placeholder="Comment (optional)"
-                          value={editComment}
-                          onChange={(e) => setEditComment(e.target.value)}
-                          onKeyDown={handleEditKeyDown}
-                          className="pugh-edit-comment"
-                          rows={2}
-                        />
-                        <div className="pugh-edit-actions">
-                          <button type="button" onClick={handleEditSave}>
-                            Save
-                          </button>
-                          <button type="button" onClick={handleEditCancel}>
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <span className="pugh-score-number">{score}</span>
-                        {label ? (
-                          <span className="pugh-score-label">{label}</span>
-                        ) : null}
-                        {history && history.length > 0 ? (
-                          <div className="pugh-history-tooltip">
-                            {history.map((h) => (
-                              <div key={h.id} className="pugh-history-entry">
-                                <div className="pugh-history-score">
-                                  {h.score} &mdash; {h.label}
-                                </div>
-                                {h.comment ? (
-                                  <div className="pugh-history-comment">
-                                    &ldquo;{h.comment}&rdquo;
-                                  </div>
-                                ) : null}
-                                <div className="pugh-history-date">
-                                  {formatDate(h.timestamp)}
-                                </div>
-                              </div>
-                            ))}
+                  return (
+                    <Table.Cell
+                      key={tool}
+                      className={`pugh-score-cell${onScoreAdd ? ' pugh-score-cell-editable' : ''}${isWinner(tool) ? ' pugh-winner-cell' : isHighlighted(tool) ? ' pugh-highlight-cell' : ''}`}
+                      style={{
+                        backgroundColor: colors.bg,
+                        color: colors.text,
+                      }}
+                      onClick={() => handleCellClick(tool, criterion)}
+                    >
+                      {editing ? (
+                        <div
+                          className="pugh-edit-form"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            placeholder="Score (1-10)"
+                            value={editScore}
+                            onChange={(e) => handleEditScoreChange(e.target.value)}
+                            onKeyDown={handleEditKeyDown}
+                            className="pugh-edit-input"
+                            autoFocus
+                          />
+                          <input
+                            type="text"
+                            placeholder="Label"
+                            value={editLabel}
+                            onChange={(e) => setEditLabel(e.target.value)}
+                            onKeyDown={handleEditKeyDown}
+                            className="pugh-edit-input"
+                            maxLength={30}
+                          />
+                          <textarea
+                            placeholder="Comment (optional)"
+                            value={editComment}
+                            onChange={(e) => setEditComment(e.target.value)}
+                            onKeyDown={handleEditKeyDown}
+                            className="pugh-edit-comment"
+                            rows={2}
+                          />
+                          <div className="pugh-edit-actions">
+                            <button type="button" onClick={handleEditSave}>
+                              Save
+                            </button>
+                            <button type="button" onClick={handleEditCancel}>
+                              Cancel
+                            </button>
                           </div>
-                        ) : null}
-                      </>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-          {showTotals && (
-            <tr className="pugh-total-row">
-              <td className="pugh-total-label">Weighted Total</td>
-              <td className="pugh-weight-cell" />
-              {tools.map((tool) => {
-                const total = weightedTotals[tool];
-                const colors = getScoreColor(
-                  (total / maxTotal) * 10,
-                  isDark,
-                );
-                return (
-                  <td
-                    key={tool}
-                    className={`pugh-total-cell${isWinner(tool) ? ' pugh-winner-cell' : isHighlighted(tool) ? ' pugh-highlight-cell' : ''}`}
-                    style={{
-                      backgroundColor: colors.bg,
-                      color: colors.text,
-                    }}
-                  >
-                    {total}
-                  </td>
-                );
-              })}
-            </tr>
-          )}
-        </tbody>
-      </table>
-      <button
-        className="pugh-toggle-button"
-        onClick={() => setShowTotals((prev) => !prev)}
-        type="button"
-      >
-        {showTotals ? 'Hide Totals' : 'Show Totals'}
-      </button>
-    </div>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="pugh-score-number">{score}</span>
+                          {label ? (
+                            <span className="pugh-score-label">{label}</span>
+                          ) : null}
+                          {history && history.length > 0 ? (
+                            <div className="pugh-history-tooltip">
+                              {history.map((h) => (
+                                <div key={h.id} className="pugh-history-entry">
+                                  <div className="pugh-history-score">
+                                    {h.score} &mdash; {h.label}
+                                  </div>
+                                  {h.comment ? (
+                                    <div className="pugh-history-comment">
+                                      &ldquo;{h.comment}&rdquo;
+                                    </div>
+                                  ) : null}
+                                  <div className="pugh-history-date">
+                                    {formatDate(h.timestamp)}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+                        </>
+                      )}
+                    </Table.Cell>
+                  );
+                })}
+              </Table.Row>
+            ))}
+            {showTotals && (
+              <Table.Row className="pugh-total-row">
+                <Table.RowHeaderCell className="pugh-total-label">Weighted Total</Table.RowHeaderCell>
+                <Table.Cell className="pugh-weight-cell" />
+                {tools.map((tool) => {
+                  const total = weightedTotals[tool];
+                  const colors = getScoreColor(
+                    (total / maxTotal) * 10,
+                    isDark,
+                  );
+                  return (
+                    <Table.Cell
+                      key={tool}
+                      className={`pugh-total-cell${isWinner(tool) ? ' pugh-winner-cell' : isHighlighted(tool) ? ' pugh-highlight-cell' : ''}`}
+                      style={{
+                        backgroundColor: colors.bg,
+                        color: colors.text,
+                      }}
+                    >
+                      {total}
+                    </Table.Cell>
+                  );
+                })}
+              </Table.Row>
+            )}
+          </Table.Body>
+        </Table.Root>
+        <button
+          className="pugh-toggle-button"
+          onClick={() => setShowTotals((prev) => !prev)}
+          type="button"
+        >
+          {showTotals ? 'Hide Totals' : 'Show Totals'}
+        </button>
+      </div>
+    </Theme>
   );
 }

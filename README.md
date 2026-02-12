@@ -17,13 +17,17 @@ npm install Spantree/decisionapp#v0.1.0
 npm install Spantree/decisionapp#abc1234
 ```
 
-React 18+ is a peer dependency — bring your own.
+Peer dependencies — bring your own:
+- `react` 18+
+- `react-dom` 18+
+- `@radix-ui/themes` 3+
 
 ## Quick start
 
 ```tsx
 import { PughMatrix } from 'decisionapp';
 import 'decisionapp/styles.css';
+import '@radix-ui/themes/styles.css';
 
 const criteria = ['Cost', 'Speed', 'Quality'];
 const tools = ['Option A', 'Option B', 'Option C'];

@@ -1,5 +1,6 @@
 // src/PughMatrix.tsx
 import { useState, useMemo } from "react";
+import { Table, Theme } from "@radix-ui/themes";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 var scoreColorCache = /* @__PURE__ */ new Map();
 function getScoreColor(score, isDark) {
@@ -141,13 +142,13 @@ function PughMatrix({
   const isHighlighted = (tool) => highlight && tool === highlight;
   const isWinner = (tool) => winner && tool === winner;
   const isEditing = (tool, criterion) => editingCell?.tool === tool && editingCell?.criterion === criterion;
-  return /* @__PURE__ */ jsxs("div", { className: `pugh-container${isDark ? " pugh-dark" : ""}`, children: [
-    /* @__PURE__ */ jsxs("table", { className: "pugh-table", children: [
-      /* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [
-        /* @__PURE__ */ jsx("th", { className: "pugh-criterion-header", children: "Criterion" }),
-        /* @__PURE__ */ jsx("th", { className: "pugh-weight-header", children: "Weight" }),
+  return /* @__PURE__ */ jsx(Theme, { appearance: isDark ? "dark" : "light", accentColor: "green", hasBackground: false, children: /* @__PURE__ */ jsxs("div", { className: `pugh-container${isDark ? " pugh-dark" : ""}`, children: [
+    /* @__PURE__ */ jsxs(Table.Root, { variant: "surface", size: "2", children: [
+      /* @__PURE__ */ jsx(Table.Header, { children: /* @__PURE__ */ jsxs(Table.Row, { children: [
+        /* @__PURE__ */ jsx(Table.ColumnHeaderCell, { justify: "start", children: "Criterion" }),
+        /* @__PURE__ */ jsx(Table.ColumnHeaderCell, { width: "72px", children: "Weight" }),
         tools.map((tool) => /* @__PURE__ */ jsx(
-          "th",
+          Table.ColumnHeaderCell,
           {
             className: `pugh-tool-header${isWinner(tool) ? " pugh-winner-header" : isHighlighted(tool) ? " pugh-highlight-header" : ""}`,
             children: isWinner(tool) ? `\u{1F451} ${tool}` : tool
@@ -155,10 +156,10 @@ function PughMatrix({
           tool
         ))
       ] }) }),
-      /* @__PURE__ */ jsxs("tbody", { children: [
-        criteria.map((criterion) => /* @__PURE__ */ jsxs("tr", { children: [
-          /* @__PURE__ */ jsx("td", { className: "pugh-criterion-cell", children: criterion }),
-          /* @__PURE__ */ jsx("td", { className: "pugh-weight-cell", children: /* @__PURE__ */ jsx(
+      /* @__PURE__ */ jsxs(Table.Body, { children: [
+        criteria.map((criterion) => /* @__PURE__ */ jsxs(Table.Row, { children: [
+          /* @__PURE__ */ jsx(Table.RowHeaderCell, { className: "pugh-criterion-cell", children: criterion }),
+          /* @__PURE__ */ jsx(Table.Cell, { className: "pugh-weight-cell", children: /* @__PURE__ */ jsx(
             "input",
             {
               type: "text",
@@ -178,7 +179,7 @@ function PughMatrix({
             const history = historyByCell.get(cellKey);
             const editing = isEditing(tool, criterion);
             return /* @__PURE__ */ jsx(
-              "td",
+              Table.Cell,
               {
                 className: `pugh-score-cell${onScoreAdd ? " pugh-score-cell-editable" : ""}${isWinner(tool) ? " pugh-winner-cell" : isHighlighted(tool) ? " pugh-highlight-cell" : ""}`,
                 style: {
@@ -257,9 +258,9 @@ function PughMatrix({
             );
           })
         ] }, criterion)),
-        showTotals && /* @__PURE__ */ jsxs("tr", { className: "pugh-total-row", children: [
-          /* @__PURE__ */ jsx("td", { className: "pugh-total-label", children: "Weighted Total" }),
-          /* @__PURE__ */ jsx("td", { className: "pugh-weight-cell" }),
+        showTotals && /* @__PURE__ */ jsxs(Table.Row, { className: "pugh-total-row", children: [
+          /* @__PURE__ */ jsx(Table.RowHeaderCell, { className: "pugh-total-label", children: "Weighted Total" }),
+          /* @__PURE__ */ jsx(Table.Cell, { className: "pugh-weight-cell" }),
           tools.map((tool) => {
             const total = weightedTotals[tool];
             const colors = getScoreColor(
@@ -267,7 +268,7 @@ function PughMatrix({
               isDark
             );
             return /* @__PURE__ */ jsx(
-              "td",
+              Table.Cell,
               {
                 className: `pugh-total-cell${isWinner(tool) ? " pugh-winner-cell" : isHighlighted(tool) ? " pugh-highlight-cell" : ""}`,
                 style: {
@@ -291,7 +292,7 @@ function PughMatrix({
         children: showTotals ? "Hide Totals" : "Show Totals"
       }
     )
-  ] });
+  ] }) });
 }
 export {
   PughMatrix

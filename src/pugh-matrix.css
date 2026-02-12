@@ -20,7 +20,7 @@
   --pugh-primary: #4caf7d;
 }
 
-.pugh-container :is(th, [role="columnheader"], [role="rowheader"]) {
+.pugh-container .rt-TableRow :is(.rt-TableColumnHeaderCell, .rt-TableRowHeaderCell) {
   color: var(--pugh-head-text);
 }
 

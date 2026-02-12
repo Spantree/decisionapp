@@ -29,11 +29,23 @@ function getScoreColor(
   const cached = scoreColorCache.get(key);
   if (cached) return cached;
 
+  // Diverging palette: low scores = red, mid scores = neutral gray, high scores = green
+  // This makes extremes pop while the middle fades out
   const ratio = Math.max(0, Math.min(1, (score - 1) / 9));
-  const hue = ratio * 120;
+  const midpoint = 0.5;
+  const distance = Math.abs(ratio - midpoint) / midpoint; // 0 at center, 1 at extremes
+  const hue = ratio * 120; // 0 (red) → 120 (green)
+  const saturation = distance * distance; // quadratic ramp: gray in center, vivid at edges
+
   const result = isDark
-    ? { bg: `hsl(${hue}, 45%, 22%)`, text: `hsl(${hue}, 60%, 78%)` }
-    : { bg: `hsl(${hue}, 75%, 90%)`, text: `hsl(${hue}, 80%, 25%)` };
+    ? {
+        bg: `hsl(${hue}, ${saturation * 55 + 5}%, ${18 + distance * 8}%)`,
+        text: `hsl(${hue}, ${saturation * 50 + 10}%, ${72 + distance * 10}%)`,
+      }
+    : {
+        bg: `hsl(${hue}, ${saturation * 80 + 5}%, ${93 - distance * 10}%)`,
+        text: `hsl(${hue}, ${saturation * 85 + 5}%, ${38 - distance * 16}%)`,
+      };
   scoreColorCache.set(key, result);
   return result;
 }

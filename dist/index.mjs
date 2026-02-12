@@ -8,8 +8,17 @@ function getScoreColor(score, isDark) {
   const cached = scoreColorCache.get(key);
   if (cached) return cached;
   const ratio = Math.max(0, Math.min(1, (score - 1) / 9));
+  const midpoint = 0.5;
+  const distance = Math.abs(ratio - midpoint) / midpoint;
   const hue = ratio * 120;
-  const result = isDark ? { bg: `hsl(${hue}, 45%, 22%)`, text: `hsl(${hue}, 60%, 78%)` } : { bg: `hsl(${hue}, 75%, 90%)`, text: `hsl(${hue}, 80%, 25%)` };
+  const saturation = distance * distance;
+  const result = isDark ? {
+    bg: `hsl(${hue}, ${saturation * 55 + 5}%, ${18 + distance * 8}%)`,
+    text: `hsl(${hue}, ${saturation * 50 + 10}%, ${72 + distance * 10}%)`
+  } : {
+    bg: `hsl(${hue}, ${saturation * 80 + 5}%, ${93 - distance * 10}%)`,
+    text: `hsl(${hue}, ${saturation * 85 + 5}%, ${38 - distance * 16}%)`
+  };
   scoreColorCache.set(key, result);
   return result;
 }

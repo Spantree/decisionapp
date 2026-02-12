@@ -165,6 +165,7 @@ function PughMatrix({
               type: "text",
               inputMode: "numeric",
               pattern: "[0-9]*",
+              "aria-label": `Weight for ${criterion}`,
               value: weights[criterion],
               onChange: (e) => handleWeightChange(criterion, e.target.value),
               className: "pugh-weight-input"
@@ -200,6 +201,7 @@ function PughMatrix({
                           inputMode: "numeric",
                           pattern: "[0-9]*",
                           placeholder: "Score (1-10)",
+                          "aria-label": `Score for ${tool}, ${criterion}`,
                           value: editScore,
                           onChange: (e) => handleEditScoreChange(e.target.value),
                           onKeyDown: handleEditKeyDown,
@@ -212,6 +214,7 @@ function PughMatrix({
                         {
                           type: "text",
                           placeholder: "Label",
+                          "aria-label": `Label for ${tool}, ${criterion}`,
                           value: editLabel,
                           onChange: (e) => setEditLabel(e.target.value),
                           onKeyDown: handleEditKeyDown,
@@ -223,6 +226,7 @@ function PughMatrix({
                         "textarea",
                         {
                           placeholder: "Comment (optional)",
+                          "aria-label": `Comment for ${tool}, ${criterion}`,
                           value: editComment,
                           onChange: (e) => setEditComment(e.target.value),
                           onKeyDown: handleEditKeyDown,

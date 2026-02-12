@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { HoverCard, Table, Theme } from '@radix-ui/themes';
+import { HoverCard, Table, Text, Theme } from '@radix-ui/themes';
 import type { ScoreEntry } from './types';
 import './pugh-matrix.css';
 
@@ -194,14 +194,14 @@ export default function PughMatrix({
         <Table.Root variant="surface" size="2">
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeaderCell justify="start">Criterion</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell width="72px">Weight</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell justify="start"><Text weight="bold" highContrast>Criterion</Text></Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell width="72px"><Text weight="bold" highContrast>Weight</Text></Table.ColumnHeaderCell>
               {tools.map((tool) => (
                 <Table.ColumnHeaderCell
                   key={tool}
                   className={`pugh-tool-header${isWinner(tool) ? ' pugh-winner-header' : isHighlighted(tool) ? ' pugh-highlight-header' : ''}`}
                 >
-                  {isWinner(tool) ? `👑 ${tool}` : tool}
+                  <Text weight="bold" highContrast>{isWinner(tool) ? `👑 ${tool}` : tool}</Text>
                 </Table.ColumnHeaderCell>
               ))}
             </Table.Row>

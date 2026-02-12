@@ -171,13 +171,13 @@ function PughMatrix({
   return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Theme, { appearance: isDark ? "dark" : "light", accentColor: "green", hasBackground: false, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `pugh-container${isDark ? " pugh-dark" : ""}`, children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_themes.Table.Root, { variant: "surface", size: "2", children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.Header, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_themes.Table.Row, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.ColumnHeaderCell, { justify: "start", children: "Criterion" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.ColumnHeaderCell, { width: "72px", children: "Weight" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.ColumnHeaderCell, { justify: "start", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Text, { weight: "bold", highContrast: true, children: "Criterion" }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Table.ColumnHeaderCell, { width: "72px", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Text, { weight: "bold", highContrast: true, children: "Weight" }) }),
         tools.map((tool) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
           import_themes.Table.ColumnHeaderCell,
           {
             className: `pugh-tool-header${isWinner(tool) ? " pugh-winner-header" : isHighlighted(tool) ? " pugh-highlight-header" : ""}`,
-            children: isWinner(tool) ? `\u{1F451} ${tool}` : tool
+            children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_themes.Text, { weight: "bold", highContrast: true, children: isWinner(tool) ? `\u{1F451} ${tool}` : tool })
           },
           tool
         ))

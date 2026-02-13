@@ -19,8 +19,8 @@ export interface PughMatrixControlledProps {
   onScoreAdd?: (entry: {
     tool: string;
     criterion: string;
-    score: number;
-    label: string;
+    score?: number;
+    label?: string;
     comment?: string;
   }) => void;
 }
@@ -150,9 +150,13 @@ function PughMatrixView({
         const arr = history.get(key) ?? [];
         arr.push(entry);
         history.set(key, arr);
-        const prev = latest.get(key);
-        if (!prev || entry.timestamp > prev.timestamp) {
-          latest.set(key, entry);
+        // Only track entries with a score as the "latest scored" entry,
+        // so comment-only entries don't overwrite the displayed score
+        if (entry.score != null) {
+          const prev = latest.get(key);
+          if (!prev || entry.timestamp > prev.timestamp) {
+            latest.set(key, entry);
+          }
         }
       }
 
@@ -239,9 +243,12 @@ function PughMatrixView({
                 {tools.map((tool) => {
                   const cellKey = `${tool}\0${criterion}`;
                   const entry = latestByCell.get(cellKey);
-                  const score = entry?.score ?? 0;
-                  const label = entry?.label ?? '';
-                  const colors = getScoreColor(score, isDark);
+                  const score = entry?.score;
+                  const label = entry?.label;
+                  const hasScore = score != null;
+                  const colors = hasScore
+                    ? getScoreColor(score, isDark)
+                    : { bg: 'transparent', text: 'inherit' };
                   const history = historyByCell.get(cellKey);
                   const editing = isEditing(tool, criterion);
 
@@ -264,7 +271,7 @@ function PughMatrixView({
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9]*"
-                            placeholder="Score (1-10)"
+                            placeholder="Score 1-10 (optional)"
                             aria-label={`Score for ${tool}, ${criterion}`}
                             value={editScore}
                             onChange={(e) => onEditScoreChange(e.target.value)}
@@ -274,7 +281,7 @@ function PughMatrixView({
                           />
                           <input
                             type="text"
-                            placeholder="Label"
+                            placeholder="Label (optional)"
                             aria-label={`Label for ${tool}, ${criterion}`}
                             value={editLabel}
                             onChange={(e) => onEditLabelChange(e.target.value)}
@@ -304,18 +311,26 @@ function PughMatrixView({
                         <HoverCard.Root>
                           <HoverCard.Trigger>
                             <span className="pugh-score-trigger">
-                              <span className="pugh-score-number">{score}</span>
-                              {label ? (
-                                <span className="pugh-score-label">{label}</span>
-                              ) : null}
+                              {hasScore ? (
+                                <>
+                                  <span className="pugh-score-number">{score}</span>
+                                  {label ? (
+                                    <span className="pugh-score-label">{label}</span>
+                                  ) : null}
+                                </>
+                              ) : (
+                                <span className="pugh-score-label">💬</span>
+                              )}
                             </span>
                           </HoverCard.Trigger>
                           <HoverCard.Content size="1" maxWidth="280px">
                             {history.map((h) => (
                               <div key={h.id} className="pugh-history-entry">
-                                <div className="pugh-history-score">
-                                  {h.score} &mdash; {h.label}
-                                </div>
+                                {h.score != null ? (
+                                  <div className="pugh-history-score">
+                                    {h.score}{h.label ? ` — ${h.label}` : ''}
+                                  </div>
+                                ) : null}
                                 {h.comment ? (
                                   <div className="pugh-history-comment">
                                     &ldquo;{h.comment}&rdquo;
@@ -328,14 +343,7 @@ function PughMatrixView({
                             ))}
                           </HoverCard.Content>
                         </HoverCard.Root>
-                      ) : (
-                        <>
-                          <span className="pugh-score-number">{score}</span>
-                          {label ? (
-                            <span className="pugh-score-label">{label}</span>
-                          ) : null}
-                        </>
-                      )}
+                      ) : null}
                     </Table.Cell>
                   );
                 })}
@@ -438,15 +446,20 @@ function PughMatrixControlled({
 
   const handleEditSave = () => {
     if (!editingCell || !onScoreAdd) return;
-    const scoreNum = Number(editScore);
-    if (isNaN(scoreNum) || scoreNum < 1 || scoreNum > 10) return;
-    if (!editLabel.trim()) return;
+    const scoreNum = editScore ? Number(editScore) : undefined;
+    if (scoreNum != null && (isNaN(scoreNum) || scoreNum < 1 || scoreNum > 10)) return;
+    const trimmedLabel = editLabel.trim() || undefined;
+    const trimmedComment = editComment.trim() || undefined;
+    // If a score is provided, label is required
+    if (scoreNum != null && !trimmedLabel) return;
+    // Require at least one of score or comment
+    if (scoreNum == null && !trimmedComment) return;
     onScoreAdd({
       tool: editingCell.tool,
       criterion: editingCell.criterion,
       score: scoreNum,
-      label: editLabel.trim(),
-      comment: editComment.trim() || undefined,
+      label: trimmedLabel,
+      comment: trimmedComment,
     });
     setEditingCell(null);
   };
@@ -537,16 +550,21 @@ function PughMatrixStoreMode({
 
   const handleEditSave = () => {
     if (!editingCell) return;
-    const scoreNum = Number(editScore);
-    if (isNaN(scoreNum) || scoreNum < 1 || scoreNum > 10) return;
-    if (!editLabel.trim()) return;
+    const scoreNum = editScore ? Number(editScore) : undefined;
+    if (scoreNum != null && (isNaN(scoreNum) || scoreNum < 1 || scoreNum > 10)) return;
+    const trimmedLabel = editLabel.trim() || undefined;
+    const trimmedComment = editComment.trim() || undefined;
+    // If a score is provided, label is required
+    if (scoreNum != null && !trimmedLabel) return;
+    // Require at least one of score or comment
+    if (scoreNum == null && !trimmedComment) return;
     addScore({
       id: `store-${Date.now()}`,
       tool: editingCell.tool,
       criterion: editingCell.criterion,
       score: scoreNum,
-      label: editLabel.trim(),
-      comment: editComment.trim() || undefined,
+      label: trimmedLabel,
+      comment: trimmedComment,
       timestamp: Date.now(),
     });
     cancelEditing();

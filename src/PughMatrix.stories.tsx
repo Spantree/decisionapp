@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { within, userEvent } from 'storybook/test';
+import { fn, within, userEvent } from 'storybook/test';
 import PughMatrix from './PughMatrix';
 import { createPughStore } from './store/createPughStore';
 import { PughStoreProvider } from './store/PughStoreProvider';
@@ -68,32 +68,14 @@ const scoresWithHistory: ScoreEntry[] = [
   entry('Svelte', 'Community Support', 7, 'Growing Fast', t2, 'SvelteKit adoption boosted ecosystem'),
 ];
 
-/** Helper: wraps PughMatrix in a store provider for each story. */
-function StoryMatrix({
-  scores: storyScores = scores,
-  highlight,
-  showWinner,
-  isDark,
-}: {
-  scores?: ScoreEntry[];
-  highlight?: string;
-  showWinner?: boolean;
-  isDark?: boolean;
-}) {
-  const store = useMemo(
-    () => createPughStore({ criteria, tools, scores: storyScores }),
-    [storyScores],
-  );
-  return (
-    <PughStoreProvider store={store}>
-      <PughMatrix highlight={highlight} showWinner={showWinner} isDark={isDark} />
-    </PughStoreProvider>
-  );
-}
-
-const meta: Meta<typeof StoryMatrix> = {
+const meta: Meta<typeof PughMatrix> = {
   title: 'PughMatrix',
-  component: StoryMatrix,
+  component: PughMatrix,
+  args: {
+    criteria,
+    tools,
+    scores,
+  },
   argTypes: {
     highlight: {
       control: 'select',
@@ -112,7 +94,7 @@ const meta: Meta<typeof StoryMatrix> = {
 };
 
 export default meta;
-type Story = StoryObj<typeof StoryMatrix>;
+type Story = StoryObj<typeof PughMatrix>;
 
 /** Default rendering with no highlight or winner. */
 export const Default: Story = {};
@@ -194,18 +176,87 @@ export const WithScoreHistory: Story = {
   },
 };
 
+/** Editable mode — click a cell to add a new score. The cell updates in place. */
+export const Editable: Story = {
+  args: {
+    scores: scoresWithHistory,
+  },
+  render: (args) => {
+    const [localScores, setLocalScores] = useState(args.scores ?? scoresWithHistory);
+    return (
+      <PughMatrix
+        {...args}
+        scores={localScores}
+        onScoreAdd={(newEntry) => {
+          setLocalScores((prev) => [
+            ...prev,
+            {
+              ...newEntry,
+              id: `new-${Date.now()}`,
+              timestamp: Date.now(),
+            },
+          ]);
+        }}
+      />
+    );
+  },
+};
+
+/** Editable mode in dark theme. */
+export const EditableDarkMode: Story = {
+  args: {
+    scores: scoresWithHistory,
+    isDark: true,
+  },
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  render: (args) => {
+    const [localScores, setLocalScores] = useState(args.scores ?? scoresWithHistory);
+    return (
+      <PughMatrix
+        {...args}
+        scores={localScores}
+        onScoreAdd={(newEntry) => {
+          setLocalScores((prev) => [
+            ...prev,
+            {
+              ...newEntry,
+              id: `new-${Date.now()}`,
+              timestamp: Date.now(),
+            },
+          ]);
+        }}
+      />
+    );
+  },
+};
+
+/** Read-only with onScoreAdd spy — actions logged in Storybook actions panel but UI doesn't update. */
+export const EditableActionOnly: Story = {
+  args: {
+    scores: scoresWithHistory,
+    onScoreAdd: fn(),
+  },
+};
+
 /* ------------------------------------------------------------------ */
-/*  localStorage persistence story                                    */
+/*  Store-mode stories                                                */
 /* ------------------------------------------------------------------ */
 
 const PERSIST_KEY = 'pugh-storybook-demo';
 
 /**
- * Store with localStorage persistence — edits survive page reloads.
+ * Store mode with localStorage persistence — edits survive page reloads.
  * Click any cell to add a score. Use "Clear saved data" to reset to defaults.
  * Writes to localStorage key "pugh-storybook-demo".
  */
-export const WithLocalStorage: Story = {
+export const StoreWithLocalStorage: Story = {
+  argTypes: {
+    criteria: { table: { disable: true } },
+    tools: { table: { disable: true } },
+    scores: { table: { disable: true } },
+  },
   render: (args) => {
     const [resetKey, setResetKey] = useState(0);
     const store = useMemo(

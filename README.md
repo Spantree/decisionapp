@@ -27,52 +27,43 @@ Peer dependencies — bring your own:
 ## Quick start
 
 ```tsx
-import { PughMatrix, createPughStore, PughStoreProvider } from 'decisionapp';
+import { PughMatrix } from 'decisionapp';
 import 'decisionapp/styles.css';
 import '@radix-ui/themes/styles.css';
 
-const store = createPughStore({
-  criteria: ['Cost', 'Speed', 'Quality'],
-  tools: ['Option A', 'Option B', 'Option C'],
-  scores: [
-    { id: '1', tool: 'Option A', criterion: 'Cost', score: 8, label: 'Low', timestamp: 1707600000000 },
-    { id: '2', tool: 'Option A', criterion: 'Speed', score: 6, label: 'Medium', timestamp: 1707600000000 },
-    { id: '3', tool: 'Option A', criterion: 'Quality', score: 9, label: 'Excellent', timestamp: 1707600000000 },
-    { id: '4', tool: 'Option B', criterion: 'Cost', score: 5, label: 'Medium', timestamp: 1707600000000 },
-    { id: '5', tool: 'Option B', criterion: 'Speed', score: 9, label: 'Fast', timestamp: 1707600000000 },
-    { id: '6', tool: 'Option B', criterion: 'Quality', score: 7, label: 'Good', timestamp: 1707600000000 },
-  ],
-});
+const criteria = ['Cost', 'Speed', 'Quality'];
+const tools = ['Option A', 'Option B', 'Option C'];
+const scores = [
+  { id: '1', tool: 'Option A', criterion: 'Cost', score: 8, label: 'Low', timestamp: 1707600000000 },
+  { id: '2', tool: 'Option A', criterion: 'Speed', score: 6, label: 'Medium', timestamp: 1707600000000 },
+  { id: '3', tool: 'Option A', criterion: 'Quality', score: 9, label: 'Excellent', timestamp: 1707600000000 },
+  { id: '4', tool: 'Option B', criterion: 'Cost', score: 5, label: 'Medium', timestamp: 1707600000000 },
+  { id: '5', tool: 'Option B', criterion: 'Speed', score: 9, label: 'Fast', timestamp: 1707600000000 },
+  { id: '6', tool: 'Option B', criterion: 'Quality', score: 7, label: 'Good', timestamp: 1707600000000 },
+  { id: '7', tool: 'Option C', criterion: 'Cost', score: 3, label: 'High', timestamp: 1707600000000 },
+  { id: '8', tool: 'Option C', criterion: 'Speed', score: 4, label: 'Slow', timestamp: 1707600000000 },
+  { id: '9', tool: 'Option C', criterion: 'Quality', score: 10, label: 'Best', timestamp: 1707600000000 },
+
+  // Revised score for the same cell — latest timestamp wins, both show in tooltip
+  { id: '10', tool: 'Option A', criterion: 'Cost', score: 6, label: 'Revised', comment: 'Hidden fees discovered', timestamp: 1707686400000 },
+];
 
 function App() {
-  return (
-    <PughStoreProvider store={store}>
-      <PughMatrix />
-    </PughStoreProvider>
-  );
+  return <PughMatrix criteria={criteria} tools={tools} scores={scores} />;
 }
 ```
 
 ## Props
 
-`PughMatrix` reads its data from a Zustand store via `<PughStoreProvider>`. The component itself only accepts visual props:
-
 | Prop | Type | Required | Description |
 | --- | --- | --- | --- |
+| `criteria` | `string[]` | yes | Row labels (evaluation criteria) |
+| `tools` | `string[]` | yes | Column labels (options being compared) |
+| `scores` | `ScoreEntry[]` | yes | Flat array of score entries (latest timestamp wins per cell) |
 | `highlight` | `string` | no | Tool name to visually highlight a column |
 | `showWinner` | `boolean` | no | Highlight the highest weighted-total column in gold with a crown (default `false`) |
 | `isDark` | `boolean` | no | Enable dark mode styling (default `false`) |
-
-### createPughStore options
-
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `criteria` | `string[]` | `[]` | Row labels (evaluation criteria) |
-| `tools` | `string[]` | `[]` | Column labels (options being compared) |
-| `scores` | `ScoreEntry[]` | `[]` | Initial score entries |
-| `weights` | `Record<string, number>` | all `10` | Initial weights per criterion |
-| `persistKey` | `string` | `'pugh-matrix'` | Storage key (only used with `persister`) |
-| `persister` | `Persister` | — | Persistence backend (omit for in-memory only) |
+| `onScoreAdd` | `(entry) => void` | no | Callback when adding a new score. Receives `{ tool, criterion, score, label, comment? }`. If omitted, cells are read-only. |
 
 ### ScoreEntry
 
@@ -109,9 +100,36 @@ The cell shows `7 / Revised`. Hovering reveals both entries with dates and comme
 
 Each score entry's `tool` and `criterion` must match a value in the `tools` and `criteria` arrays. The component throws an error if any entry references an unrecognized tool or criterion, listing the allowed values in the error message.
 
-## Persistence
+## Store mode (Zustand)
 
-### localStorage
+For apps that want built-in state management instead of lifting state yourself, PughMatrix supports a **store mode** powered by Zustand. Wrap the component in a `PughStoreProvider` and omit the data props — all state lives in the store.
+
+### In-memory store
+
+```tsx
+import { PughMatrix, createPughStore, PughStoreProvider } from 'decisionapp';
+import 'decisionapp/styles.css';
+
+const store = createPughStore({
+  criteria: ['Cost', 'Speed', 'Quality'],
+  tools: ['Option A', 'Option B'],
+  scores: [
+    { id: '1', tool: 'Option A', criterion: 'Cost', score: 8, label: 'Low', timestamp: Date.now() },
+  ],
+});
+
+function App() {
+  return (
+    <PughStoreProvider store={store}>
+      <PughMatrix />
+    </PughStoreProvider>
+  );
+}
+```
+
+In store mode, cells are always editable — scores are added directly to the store.
+
+### Persisted store (localStorage)
 
 ```tsx
 import { createPughStore, createLocalStoragePersister, PughStoreProvider, PughMatrix } from 'decisionapp';
@@ -167,6 +185,14 @@ console.log(store.getState().scores);
 store.getState().addScore({ id: '1', tool: 'A', criterion: 'Cost', score: 8, label: 'Low', timestamp: Date.now() });
 ```
 
+### Dual-mode: controlled vs. store
+
+PughMatrix auto-detects its mode:
+- **Controlled mode** (backward-compatible): pass `criteria`, `tools`, and `scores` props directly.
+- **Store mode**: omit data props and wrap in `<PughStoreProvider>`.
+
+Passing data props always takes precedence, so existing code works unchanged.
+
 ## Features
 
 - **Interactive weights** — each criterion has an adjustable weight (0–10) that updates totals in real time
@@ -175,15 +201,14 @@ store.getState().addScore({ id: '1', tool: 'A', criterion: 'Cost', score: 8, lab
 - **Collapsible totals row** — weighted totals are hidden by default; toggle with the button below the table
 - **Dark mode** — pass `isDark={true}` or detect it from your app's theme system
 - **Score history** — multiple entries per cell; hover to see all revisions in a tooltip (latest timestamp wins)
-- **Inline editing** — click a cell to add a new score + label + comment (scores are saved to the store)
-- **Pluggable persistence** — swap in any backend via the `Persister` interface
+- **Inline editing** — pass `onScoreAdd` to let users click a cell and add a new score + label + comment
 
 ## Dark mode
 
 The component uses CSS custom properties scoped under `.pugh-container`. Pass the `isDark` prop to toggle:
 
 ```tsx
-<PughMatrix isDark={true} />
+<PughMatrix criteria={criteria} tools={tools} scores={scores} isDark={true} />
 ```
 
 If you're in a framework with a theme hook (e.g. Next.js, Docusaurus), wire it up:
@@ -194,7 +219,14 @@ import { useTheme } from 'next-themes';
 
 function MyMatrix() {
   const { resolvedTheme } = useTheme();
-  return <PughMatrix isDark={resolvedTheme === 'dark'} />;
+  return (
+    <PughMatrix
+      criteria={criteria}
+      tools={tools}
+      scores={scores}
+      isDark={resolvedTheme === 'dark'}
+    />
+  );
 }
 ```
 
@@ -219,18 +251,13 @@ In Docusaurus, dark mode is detected via the `useColorMode` hook from `@docusaur
 
 ```tsx
 // src/components/MyPughMatrix.tsx
-import { PughMatrix, createPughStore, PughStoreProvider } from 'decisionapp';
+import { PughMatrix } from 'decisionapp';
 import 'decisionapp/styles.css';
 import { useColorMode } from '@docusaurus/theme-common';
 
-export default function MyPughMatrix({ criteria, tools, scores, ...props }) {
+export default function MyPughMatrix(props) {
   const { colorMode } = useColorMode();
-  const store = useMemo(() => createPughStore({ criteria, tools, scores }), [criteria, tools, scores]);
-  return (
-    <PughStoreProvider store={store}>
-      <PughMatrix {...props} isDark={colorMode === 'dark'} />
-    </PughStoreProvider>
-  );
+  return <PughMatrix {...props} isDark={colorMode === 'dark'} />;
 }
 ```
 
@@ -268,7 +295,12 @@ However, Infima is tightly coupled to Docusaurus conventions and brings a full C
 Call out a specific column:
 
 ```tsx
-<PughMatrix highlight="Widget B" />
+<PughMatrix
+  criteria={['Price', 'Durability', 'Style']}
+  tools={['Widget A', 'Widget B', 'Widget C']}
+  scores={scores}
+  highlight="Widget B"
+/>
 ```
 
 The highlighted column gets a primary-color header and bordered cells.
@@ -282,9 +314,14 @@ npm run build   # outputs dist/ with CJS, ESM, types, and CSS
 
 ## Architecture & design decisions
 
-### Store-only component
+### Dual-mode component (controlled vs. store)
 
-`PughMatrix` always reads from a Zustand store via `<PughStoreProvider>`. There is no controlled/props-based mode. This keeps the component simple — one code path, no mode detection, no intermediate view layer. The tradeoff is that consumers must create a store, but `createPughStore({ criteria, tools, scores })` is a single line.
+The `PughMatrix` component supports two modes rather than forcing a migration:
+
+- **Controlled mode** preserves the original API (`criteria`/`tools`/`scores` props + `useState` internally). Existing consumers don't need to change anything.
+- **Store mode** activates when the component finds a `PughStoreProvider` in context and no data props are passed. This lets new consumers opt into Zustand without the old API being removed.
+
+Internally, both modes feed the same `PughMatrixView` rendering component, which is a pure function of resolved data + callbacks. This avoids duplicating the table rendering logic.
 
 ### Zustand over alternatives
 

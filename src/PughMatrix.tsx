@@ -1,5 +1,9 @@
 import { useState, useMemo } from 'react';
 import { HoverCard, Table, Theme } from '@radix-ui/themes';
+import {
+  ruby, red, tomato, amber, yellow, lime, grass, green,
+  greenDark,
+} from '@radix-ui/colors';
 import type { ScoreEntry } from './types';
 import './pugh-matrix.css';
 
@@ -21,29 +25,29 @@ export interface PughMatrixProps {
 
 // Radix color pairs: background (step 9-11) + matched foreground (step 1-2 or 12)
 const SCORE_COLORS_LIGHT: Record<number, { bg: string; text: string }> = {
-  1:  { bg: '#e54666', text: '#fff7f8' }, // Ruby 9 / Ruby 2
-  2:  { bg: '#e5484d', text: '#fff7f7' }, // Red 9 / Red 2
-  3:  { bg: '#e54d2e', text: '#fff8f7' }, // Tomato 9 / Tomato 2
-  4:  { bg: '#ffb224', text: '#4f3422' }, // Amber 9 / Amber 12
-  5:  { bg: '#ffe629', text: '#473b1f' }, // Yellow 9 / Yellow 12
-  6:  { bg: '#bdee63', text: '#37401c' }, // Lime 9 / Lime 12
-  7:  { bg: '#46a758', text: '#f2fcf2' }, // Grass 9 / Grass 2
-  8:  { bg: '#3d9a50', text: '#f2fcf2' }, // Grass 10 / Grass 2
-  9:  { bg: '#30a46c', text: '#f4fbf6' }, // Green 9 / Green 2
-  10: { bg: '#18794e', text: '#f4fbf6' }, // Green 11 / Green 2
+  1:  { bg: ruby.ruby9,     text: ruby.ruby2 },
+  2:  { bg: red.red9,       text: red.red2 },
+  3:  { bg: tomato.tomato9, text: tomato.tomato2 },
+  4:  { bg: amber.amber9,   text: amber.amber12 },
+  5:  { bg: yellow.yellow9, text: yellow.yellow12 },
+  6:  { bg: lime.lime9,     text: lime.lime12 },
+  7:  { bg: grass.grass9,   text: grass.grass2 },
+  8:  { bg: grass.grass10,  text: grass.grass2 },
+  9:  { bg: green.green9,   text: green.green2 },
+  10: { bg: green.green11,  text: green.green2 },
 };
 
 const SCORE_COLORS_DARK: Record<number, { bg: string; text: string }> = {
-  1:  { bg: '#e54666', text: '#fff7f8' }, // Ruby 9 / Ruby 2
-  2:  { bg: '#e5484d', text: '#fff7f7' }, // Red 9 / Red 2
-  3:  { bg: '#e54d2e', text: '#fff8f7' }, // Tomato 9 / Tomato 2
-  4:  { bg: '#ffb224', text: '#4f3422' }, // Amber 9 / Amber 12
-  5:  { bg: '#ffe629', text: '#473b1f' }, // Yellow 9 / Yellow 12
-  6:  { bg: '#bdee63', text: '#37401c' }, // Lime 9 / Lime 12
-  7:  { bg: '#46a758', text: '#f2fcf2' }, // Grass 9 / Grass 2
-  8:  { bg: '#3d9a50', text: '#f2fcf2' }, // Grass 10 / Grass 2
-  9:  { bg: '#30a46c', text: '#f4fbf6' }, // Green 9 / Green 2
-  10: { bg: '#4cc38a', text: '#0d1912' }, // Green 11 / Green 1
+  1:  { bg: ruby.ruby9,     text: ruby.ruby2 },
+  2:  { bg: red.red9,       text: red.red2 },
+  3:  { bg: tomato.tomato9, text: tomato.tomato2 },
+  4:  { bg: amber.amber9,   text: amber.amber12 },
+  5:  { bg: yellow.yellow9, text: yellow.yellow12 },
+  6:  { bg: lime.lime9,     text: lime.lime12 },
+  7:  { bg: grass.grass9,   text: grass.grass2 },
+  8:  { bg: grass.grass10,  text: grass.grass2 },
+  9:  { bg: green.green9,   text: green.green2 },
+  10: { bg: greenDark.green11, text: greenDark.green1 },
 };
 
 function getScoreColor(

@@ -19,35 +19,40 @@ export interface PughMatrixProps {
   }) => void;
 }
 
-const scoreColorCache = new Map<string, { bg: string; text: string }>();
+// Radix color pairs: background (step 9-11) + matched foreground (step 1-2 or 12)
+const SCORE_COLORS_LIGHT: Record<number, { bg: string; text: string }> = {
+  1:  { bg: '#e54666', text: '#fff7f8' }, // Ruby 9 / Ruby 2
+  2:  { bg: '#e5484d', text: '#fff7f7' }, // Red 9 / Red 2
+  3:  { bg: '#e54d2e', text: '#fff8f7' }, // Tomato 9 / Tomato 2
+  4:  { bg: '#ffb224', text: '#4f3422' }, // Amber 9 / Amber 12
+  5:  { bg: '#ffe629', text: '#473b1f' }, // Yellow 9 / Yellow 12
+  6:  { bg: '#bdee63', text: '#37401c' }, // Lime 9 / Lime 12
+  7:  { bg: '#46a758', text: '#f2fcf2' }, // Grass 9 / Grass 2
+  8:  { bg: '#3d9a50', text: '#f2fcf2' }, // Grass 10 / Grass 2
+  9:  { bg: '#30a46c', text: '#f4fbf6' }, // Green 9 / Green 2
+  10: { bg: '#18794e', text: '#f4fbf6' }, // Green 11 / Green 2
+};
+
+const SCORE_COLORS_DARK: Record<number, { bg: string; text: string }> = {
+  1:  { bg: '#e54666', text: '#fff7f8' }, // Ruby 9 / Ruby 2
+  2:  { bg: '#e5484d', text: '#fff7f7' }, // Red 9 / Red 2
+  3:  { bg: '#e54d2e', text: '#fff8f7' }, // Tomato 9 / Tomato 2
+  4:  { bg: '#ffb224', text: '#4f3422' }, // Amber 9 / Amber 12
+  5:  { bg: '#ffe629', text: '#473b1f' }, // Yellow 9 / Yellow 12
+  6:  { bg: '#bdee63', text: '#37401c' }, // Lime 9 / Lime 12
+  7:  { bg: '#46a758', text: '#f2fcf2' }, // Grass 9 / Grass 2
+  8:  { bg: '#3d9a50', text: '#f2fcf2' }, // Grass 10 / Grass 2
+  9:  { bg: '#30a46c', text: '#f4fbf6' }, // Green 9 / Green 2
+  10: { bg: '#4cc38a', text: '#0d1912' }, // Green 11 / Green 1
+};
 
 function getScoreColor(
   score: number,
   isDark: boolean,
 ): { bg: string; text: string } {
-  const key = `${score}-${isDark}`;
-  const cached = scoreColorCache.get(key);
-  if (cached) return cached;
-
-  // Diverging palette: low scores = red, mid scores = neutral gray, high scores = green
-  // This makes extremes pop while the middle fades out
-  const ratio = Math.max(0, Math.min(1, (score - 1) / 9));
-  const midpoint = 0.5;
-  const distance = Math.abs(ratio - midpoint) / midpoint; // 0 at center, 1 at extremes
-  const hue = ratio * 120; // 0 (red) → 120 (green)
-  const saturation = distance * distance; // quadratic ramp: gray in center, vivid at edges
-
-  const result = isDark
-    ? {
-        bg: `hsl(${hue}, ${saturation * 55 + 5}%, ${18 + distance * 8}%)`,
-        text: `hsl(${hue}, ${saturation * 50 + 10}%, ${72 + distance * 10}%)`,
-      }
-    : {
-        bg: `hsl(${hue}, ${saturation * 80 + 5}%, ${93 - distance * 10}%)`,
-        text: `hsl(${hue}, ${saturation * 85 + 5}%, ${38 - distance * 16}%)`,
-      };
-  scoreColorCache.set(key, result);
-  return result;
+  const clamped = Math.max(1, Math.min(10, Math.round(score)));
+  const palette = isDark ? SCORE_COLORS_DARK : SCORE_COLORS_LIGHT;
+  return palette[clamped];
 }
 
 function formatDate(timestamp: number): string {

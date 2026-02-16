@@ -21,11 +21,11 @@ const SCORE_COLORS_LIGHT: Record<number, { bg: string; text: string }> = {
   3:  { bg: tomato.tomato5, text: tomato.tomato11 },
   4:  { bg: amber.amber6,   text: amber.amber11 },
   5:  { bg: yellow.yellow5, text: yellow.yellow11 },
-  6:  { bg: lime.lime5,     text: lime.lime11 },
-  7:  { bg: grass.grass5,   text: grass.grass11 },
-  8:  { bg: grass.grass6,   text: grass.grass11 },
-  9:  { bg: green.green5,   text: green.green11 },
-  10: { bg: green.green6,   text: green.green11 },
+  6:  { bg: lime.lime5,     text: lime.lime12 },
+  7:  { bg: grass.grass5,   text: grass.grass12 },
+  8:  { bg: grass.grass6,   text: grass.grass12 },
+  9:  { bg: green.green5,   text: green.green12 },
+  10: { bg: green.green6,   text: green.green12 },
 };
 
 // Dark mode: saturated bg (step 9) + light text (steps 1-2 or 12)

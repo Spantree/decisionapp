@@ -26,111 +26,31 @@ Peer dependencies — bring your own:
 
 ## Quick start
 
-```tsx
-import { PughMatrix } from 'decisionapp';
-import 'decisionapp/styles.css';
-import '@radix-ui/themes/styles.css';
-
-const criteria = ['Cost', 'Speed', 'Quality'];
-const tools = ['Option A', 'Option B', 'Option C'];
-const scores = [
-  { id: '1', tool: 'Option A', criterion: 'Cost', score: 8, label: 'Low', timestamp: 1707600000000 },
-  { id: '2', tool: 'Option A', criterion: 'Speed', score: 6, label: 'Medium', timestamp: 1707600000000 },
-  { id: '3', tool: 'Option A', criterion: 'Quality', score: 9, label: 'Excellent', timestamp: 1707600000000 },
-  { id: '4', tool: 'Option B', criterion: 'Cost', score: 5, label: 'Medium', timestamp: 1707600000000 },
-  { id: '5', tool: 'Option B', criterion: 'Speed', score: 9, label: 'Fast', timestamp: 1707600000000 },
-  { id: '6', tool: 'Option B', criterion: 'Quality', score: 7, label: 'Good', timestamp: 1707600000000 },
-  { id: '7', tool: 'Option C', criterion: 'Cost', score: 3, label: 'High', timestamp: 1707600000000 },
-  { id: '8', tool: 'Option C', criterion: 'Speed', score: 4, label: 'Slow', timestamp: 1707600000000 },
-  { id: '9', tool: 'Option C', criterion: 'Quality', score: 10, label: 'Best', timestamp: 1707600000000 },
-
-  // Revised score for the same cell — latest timestamp wins, both show in tooltip
-  { id: '10', tool: 'Option A', criterion: 'Cost', score: 6, label: 'Revised', comment: 'Hidden fees discovered', timestamp: 1707686400000 },
-];
-
-function App() {
-  return <PughMatrix criteria={criteria} tools={tools} scores={scores} />;
-}
-```
-
-## Props
-
-| Prop | Type | Required | Description |
-| --- | --- | --- | --- |
-| `criteria` | `string[]` | yes | Row labels (evaluation criteria) |
-| `tools` | `string[]` | yes | Column labels (options being compared) |
-| `scores` | `ScoreEntry[]` | yes | Flat array of score entries (latest timestamp wins per cell) |
-| `highlight` | `string` | no | Tool name to visually highlight a column |
-| `showWinner` | `boolean` | no | Highlight the highest weighted-total column in gold with a crown (default `false`) |
-| `isDark` | `boolean` | no | Enable dark mode styling (default `false`) |
-| `onScoreAdd` | `(entry) => void` | no | Callback when adding a new score. Receives `{ tool, criterion, score?, label?, comment? }`. If a score is provided, label is required. If omitted, cells are read-only. |
-
-### ScoreEntry
-
-```ts
-interface ScoreEntry {
-  id: string;           // unique identifier
-  tool: string;         // column (option being scored)
-  criterion: string;    // row (evaluation criterion)
-  score?: number;       // 1–10 (optional — omit for comment-only entries)
-  label?: string;       // descriptive text shown below the score (required when score is provided)
-  comment?: string;     // optional comment
-  timestamp: number;    // epoch ms — used for ordering (latest wins)
-}
-```
-
-Multiple entries per (tool, criterion) pair are allowed — this is how score history works. The component displays the most recent entry that has a `score` and shows all entries (including comment-only ones) in a hover tooltip sorted newest-first. Comment-only entries do not overwrite the displayed score.
-
-### Score history
-
-Add multiple entries for the same cell to track revisions over time:
-
-```ts
-const scores = [
-  // Original score
-  { id: 'a1', tool: 'React', criterion: 'Cost', score: 9, label: 'Free', timestamp: 1707600000000 },
-  // Revised score — this one displays because it has a later timestamp
-  { id: 'a2', tool: 'React', criterion: 'Cost', score: 7, label: 'Revised', comment: 'Hidden infra costs', timestamp: 1707686400000 },
-];
-```
-
-The cell shows `7 / Revised`. Hovering reveals both entries with dates and comments.
-
-### Comment-only entries (dialog)
-
-Add comment-only entries to have a discussion on a cell without changing its score:
-
-```ts
-const scores = [
-  // Original score
-  { id: 'a1', tool: 'React', criterion: 'Cost', score: 9, label: 'Free', timestamp: 1707600000000 },
-  // Comment-only follow-up — score remains 9 / Free
-  { id: 'a2', tool: 'React', criterion: 'Cost', comment: 'But what about hosting?', timestamp: 1707686400000 },
-  { id: 'a3', tool: 'React', criterion: 'Cost', comment: 'Vercel free tier covers it', timestamp: 1707772800000 },
-];
-```
-
-The cell still displays `9 / Free` with its original color. Hovering reveals the full thread of scores and comments. In the edit form, score and label fields are marked as optional — submitting with only a comment creates a comment-only entry.
-
-### Validation
-
-Each score entry's `tool` and `criterion` must match a value in the `tools` and `criteria` arrays. The component throws an error if any entry references an unrecognized tool or criterion, listing the allowed values in the error message.
-
-## Store mode (Zustand)
-
-For apps that want built-in state management instead of lifting state yourself, PughMatrix supports a **store mode** powered by Zustand. Wrap the component in a `PughStoreProvider` and omit the data props — all state lives in the store.
-
-### In-memory store
+PughMatrix always reads its data from a Zustand store. Create a store with `createPughStore`, pass it to `PughStoreProvider`, and render `PughMatrix` inside the provider:
 
 ```tsx
 import { PughMatrix, createPughStore, PughStoreProvider } from 'decisionapp';
 import 'decisionapp/styles.css';
+import '@radix-ui/themes/styles.css';
 
 const store = createPughStore({
-  criteria: ['Cost', 'Speed', 'Quality'],
-  tools: ['Option A', 'Option B'],
+  criteria: [
+    { id: 'cost', label: 'Cost' },
+    { id: 'speed', label: 'Speed' },
+    { id: 'quality', label: 'Quality' },
+  ],
+  tools: [
+    { id: 'option-a', label: 'Option A' },
+    { id: 'option-b', label: 'Option B' },
+    { id: 'option-c', label: 'Option C' },
+  ],
   scores: [
-    { id: '1', tool: 'Option A', criterion: 'Cost', score: 8, label: 'Low', timestamp: Date.now() },
+    { id: '1', toolId: 'option-a', criterionId: 'cost', score: 8, label: 'Low', timestamp: 1707600000000 },
+    { id: '2', toolId: 'option-a', criterionId: 'speed', score: 6, label: 'Medium', timestamp: 1707600000000 },
+    { id: '3', toolId: 'option-a', criterionId: 'quality', score: 9, label: 'Excellent', timestamp: 1707600000000 },
+    { id: '4', toolId: 'option-b', criterionId: 'cost', score: 5, label: 'Medium', timestamp: 1707600000000 },
+    { id: '5', toolId: 'option-b', criterionId: 'speed', score: 9, label: 'Fast', timestamp: 1707600000000 },
+    { id: '6', toolId: 'option-b', criterionId: 'quality', score: 7, label: 'Good', timestamp: 1707600000000 },
   ],
 });
 
@@ -143,7 +63,124 @@ function App() {
 }
 ```
 
-In store mode, cells are always editable — scores are added directly to the store.
+Cells are always editable — click any cell to add a score, label, or comment directly to the store.
+
+## Props
+
+PughMatrix accepts only presentational props. All data lives in the store.
+
+| Prop | Type | Required | Description |
+| --- | --- | --- | --- |
+| `highlight` | `string` | no | Tool ID to visually highlight a column |
+| `showWinner` | `boolean` | no | Highlight the highest weighted-total column in gold with a crown (default `false`) |
+| `isDark` | `boolean` | no | Enable dark mode styling (default `false`) |
+
+### Criterion & Tool
+
+Criteria and tools are objects with a stable `id` and a display `label`. Scores reference items by ID, so renaming a label never breaks existing score data.
+
+```ts
+interface Criterion {
+  id: string;    // stable identifier used in scores and weights
+  label: string; // display text (can be renamed freely)
+}
+
+interface Tool {
+  id: string;    // stable identifier used in scores and highlight
+  label: string; // display text (can be renamed freely)
+}
+```
+
+### ScoreEntry
+
+```ts
+interface ScoreEntry {
+  id: string;           // unique identifier
+  toolId: string;       // tool ID (column)
+  criterionId: string;  // criterion ID (row)
+  score?: number;       // 1–10 (optional — omit for comment-only entries)
+  label?: string;       // descriptive text shown below the score (required when score is provided)
+  comment?: string;     // optional comment
+  timestamp: number;    // epoch ms — used for ordering (latest wins)
+}
+```
+
+Multiple entries per (toolId, criterionId) pair are allowed — this is how score history works. The component displays the most recent entry that has a `score` and shows all entries (including comment-only ones) in a hover tooltip sorted newest-first. Comment-only entries do not overwrite the displayed score.
+
+### Score history
+
+Add multiple entries for the same cell to track revisions over time:
+
+```ts
+const scores = [
+  // Original score
+  { id: 'a1', toolId: 'react', criterionId: 'cost', score: 9, label: 'Free', timestamp: 1707600000000 },
+  // Revised score — this one displays because it has a later timestamp
+  { id: 'a2', toolId: 'react', criterionId: 'cost', score: 7, label: 'Revised', comment: 'Hidden infra costs', timestamp: 1707686400000 },
+];
+```
+
+The cell shows `7 / Revised`. Hovering reveals both entries with dates and comments.
+
+### Comment-only entries (dialog)
+
+Add comment-only entries to have a discussion on a cell without changing its score:
+
+```ts
+const scores = [
+  // Original score
+  { id: 'a1', toolId: 'react', criterionId: 'cost', score: 9, label: 'Free', timestamp: 1707600000000 },
+  // Comment-only follow-up — score remains 9 / Free
+  { id: 'a2', toolId: 'react', criterionId: 'cost', comment: 'But what about hosting?', timestamp: 1707686400000 },
+  { id: 'a3', toolId: 'react', criterionId: 'cost', comment: 'Vercel free tier covers it', timestamp: 1707772800000 },
+];
+```
+
+The cell still displays `9 / Free` with its original color. Hovering reveals the full thread of scores and comments. In the edit form, score and label fields are marked as optional — submitting with only a comment creates a comment-only entry.
+
+### Validation
+
+Each score entry's `toolId` and `criterionId` must match an `id` in the `tools` and `criteria` arrays. The component throws an error if any entry references an unrecognized tool or criterion, listing the allowed values in the error message.
+
+## Store API
+
+### Creating a store
+
+```tsx
+import { createPughStore, PughStoreProvider, PughMatrix } from 'decisionapp';
+
+const store = createPughStore({
+  criteria: [
+    { id: 'cost', label: 'Cost' },
+    { id: 'speed', label: 'Speed' },
+    { id: 'quality', label: 'Quality' },
+  ],
+  tools: [
+    { id: 'option-a', label: 'Option A' },
+    { id: 'option-b', label: 'Option B' },
+  ],
+  scores: [
+    { id: '1', toolId: 'option-a', criterionId: 'cost', score: 8, label: 'Low', timestamp: Date.now() },
+  ],
+});
+
+function App() {
+  return (
+    <PughStoreProvider store={store}>
+      <PughMatrix />
+    </PughStoreProvider>
+  );
+}
+```
+
+### Renaming tools and criteria
+
+Labels can be renamed without breaking score references, since scores use stable IDs:
+
+```ts
+store.getState().renameTool('option-a', 'Widget A');
+store.getState().renameCriterion('cost', 'Total Cost of Ownership');
+```
 
 ### Persisted store (localStorage)
 
@@ -151,8 +188,14 @@ In store mode, cells are always editable — scores are added directly to the st
 import { createPughStore, createLocalStoragePersister, PughStoreProvider, PughMatrix } from 'decisionapp';
 
 const store = createPughStore({
-  criteria: ['Cost', 'Speed'],
-  tools: ['A', 'B'],
+  criteria: [
+    { id: 'cost', label: 'Cost' },
+    { id: 'speed', label: 'Speed' },
+  ],
+  tools: [
+    { id: 'a', label: 'A' },
+    { id: 'b', label: 'B' },
+  ],
   persistKey: 'my-matrix',
   persister: createLocalStoragePersister(),
 });
@@ -192,40 +235,43 @@ const myPersister: Persister = {
 The store returned by `createPughStore` is a vanilla Zustand store. You can read and mutate it outside of React:
 
 ```ts
-const store = createPughStore({ criteria: ['Cost'], tools: ['A'] });
+const store = createPughStore({
+  criteria: [{ id: 'cost', label: 'Cost' }],
+  tools: [{ id: 'a', label: 'A' }],
+});
 
 // Read
 console.log(store.getState().scores);
 
 // Write
-store.getState().addScore({ id: '1', tool: 'A', criterion: 'Cost', score: 8, label: 'Low', timestamp: Date.now() });
+store.getState().addScore({
+  id: '1', toolId: 'a', criterionId: 'cost', score: 8, label: 'Low', timestamp: Date.now(),
+});
+
+// Rename
+store.getState().renameTool('a', 'Option A');
 ```
-
-### Dual-mode: controlled vs. store
-
-PughMatrix auto-detects its mode:
-- **Controlled mode** (backward-compatible): pass `criteria`, `tools`, and `scores` props directly.
-- **Store mode**: omit data props and wrap in `<PughStoreProvider>`.
-
-Passing data props always takes precedence, so existing code works unchanged.
 
 ## Features
 
 - **Interactive weights** — each criterion has an adjustable weight (0–10) that updates totals in real time
 - **Color-coded cells** — scores map to a red-to-green HSL gradient, tuned for both light and dark backgrounds
-- **Column highlighting** — pass `highlight="Option B"` to call out a specific column with a primary-color border
+- **Column highlighting** — pass `highlight="option-b"` (tool ID) to call out a specific column with a primary-color border
 - **Collapsible totals row** — weighted totals are hidden by default; toggle with the button below the table
 - **Dark mode** — pass `isDark={true}` or detect it from your app's theme system
 - **Score history** — multiple entries per cell; hover to see all revisions in a tooltip (latest scored entry wins)
 - **Comment-only entries** — add comments without changing a cell's score, enabling threaded discussion on any cell
-- **Inline editing** — pass `onScoreAdd` to let users click a cell and add a new score + label, a comment, or both
+- **Inline editing** — click any cell to add a new score + label, a comment, or both
+- **Rename support** — rename tool/criterion labels without breaking score references (`renameTool`, `renameCriterion`)
 
 ## Dark mode
 
-The component uses CSS custom properties scoped under `.pugh-container`. Pass the `isDark` prop to toggle:
+Pass the `isDark` prop to toggle:
 
 ```tsx
-<PughMatrix criteria={criteria} tools={tools} scores={scores} isDark={true} />
+<PughStoreProvider store={store}>
+  <PughMatrix isDark={true} />
+</PughStoreProvider>
 ```
 
 If you're in a framework with a theme hook (e.g. Next.js, Docusaurus), wire it up:
@@ -237,12 +283,9 @@ import { useTheme } from 'next-themes';
 function MyMatrix() {
   const { resolvedTheme } = useTheme();
   return (
-    <PughMatrix
-      criteria={criteria}
-      tools={tools}
-      scores={scores}
-      isDark={resolvedTheme === 'dark'}
-    />
+    <PughStoreProvider store={store}>
+      <PughMatrix isDark={resolvedTheme === 'dark'} />
+    </PughStoreProvider>
   );
 }
 ```
@@ -262,36 +305,180 @@ Override the default theme by setting these variables on a parent element:
 }
 ```
 
-## Using with Docusaurus
+## Using with Docusaurus (greenfield guide)
 
-In Docusaurus, dark mode is detected via the `useColorMode` hook from `@docusaurus/theme-common`. Create a thin wrapper:
+This section walks through wiring up `decisionapp` with Zustand state in a Docusaurus site from scratch.
+
+### 1. Install dependencies
+
+```bash
+npm install Spantree/decisionapp @radix-ui/themes
+```
+
+(`zustand` is included as a transitive dependency of `decisionapp`.)
+
+### 2. Create a wrapper component
+
+Docusaurus uses `useColorMode` for dark mode detection. Create a wrapper that:
+- Creates (or reuses) a Zustand store
+- Wraps `PughMatrix` in a `PughStoreProvider`
+- Passes the Docusaurus color mode through as `isDark`
 
 ```tsx
-// src/components/MyPughMatrix.tsx
-import { PughMatrix } from 'decisionapp';
+// src/components/PughMatrixWidget.tsx
+import { useMemo } from 'react';
+import {
+  PughMatrix,
+  createPughStore,
+  PughStoreProvider,
+  createLocalStoragePersister,
+} from 'decisionapp';
 import 'decisionapp/styles.css';
+import '@radix-ui/themes/styles.css';
 import { useColorMode } from '@docusaurus/theme-common';
+import type { Criterion, Tool, ScoreEntry } from 'decisionapp';
 
-export default function MyPughMatrix(props) {
+interface PughMatrixWidgetProps {
+  /** Row definitions — the evaluation criteria. */
+  criteria: Criterion[];
+  /** Column definitions — the options being compared. */
+  tools: Tool[];
+  /** Initial scores to seed the matrix with. */
+  scores?: ScoreEntry[];
+  /** localStorage key for persistence. Omit for in-memory only. */
+  persistKey?: string;
+  /** Tool ID to visually highlight a column. */
+  highlight?: string;
+  /** Show the winner crown. */
+  showWinner?: boolean;
+}
+
+export default function PughMatrixWidget({
+  criteria,
+  tools,
+  scores = [],
+  persistKey,
+  highlight,
+  showWinner,
+}: PughMatrixWidgetProps) {
   const { colorMode } = useColorMode();
-  return <PughMatrix {...props} isDark={colorMode === 'dark'} />;
+
+  // Create the store once. If persistKey is provided, localStorage
+  // persistence is enabled and the matrix survives page reloads.
+  const store = useMemo(
+    () =>
+      createPughStore({
+        criteria,
+        tools,
+        scores,
+        ...(persistKey && {
+          persistKey,
+          persister: createLocalStoragePersister(),
+        }),
+      }),
+    // Intentionally empty — the store is created once per mount.
+    // Changing criteria/tools/scores after mount requires remounting
+    // (e.g. with a React key).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  return (
+    <PughStoreProvider store={store}>
+      <PughMatrix
+        highlight={highlight}
+        showWinner={showWinner}
+        isDark={colorMode === 'dark'}
+      />
+    </PughStoreProvider>
+  );
 }
 ```
 
-Register it in `src/theme/MDXComponents.tsx` to use it in `.mdx` files:
+### 3. Register the component for MDX
+
+Make the component available in `.mdx` files by adding it to `src/theme/MDXComponents.tsx`:
 
 ```tsx
+// src/theme/MDXComponents.tsx
 import MDXComponents from '@theme-original/MDXComponents';
-import MyPughMatrix from '@site/src/components/MyPughMatrix';
+import PughMatrixWidget from '@site/src/components/PughMatrixWidget';
 
-export default { ...MDXComponents, MyPughMatrix };
+export default { ...MDXComponents, PughMatrixWidget };
 ```
 
-Then in any `.mdx` page:
+### 4. Use it in an MDX page
 
 ```mdx
-<MyPughMatrix criteria={criteria} tools={tools} scores={scores} highlight="Option B" />
+---
+title: Framework Comparison
+---
+
+export const criteria = [
+  { id: 'cost', label: 'Cost' },
+  { id: 'performance', label: 'Performance' },
+  { id: 'ease-of-use', label: 'Ease of Use' },
+];
+export const tools = [
+  { id: 'react', label: 'React' },
+  { id: 'vue', label: 'Vue' },
+  { id: 'svelte', label: 'Svelte' },
+];
+export const scores = [
+  { id: '1', toolId: 'react', criterionId: 'cost', score: 9, label: 'Free', timestamp: 1707600000000 },
+  { id: '2', toolId: 'react', criterionId: 'performance', score: 7, label: 'Good', timestamp: 1707600000000 },
+  { id: '3', toolId: 'vue', criterionId: 'cost', score: 9, label: 'Free', timestamp: 1707600000000 },
+  { id: '4', toolId: 'vue', criterionId: 'performance', score: 8, label: 'Great', timestamp: 1707600000000 },
+  { id: '5', toolId: 'svelte', criterionId: 'cost', score: 9, label: 'Free', timestamp: 1707600000000 },
+  { id: '6', toolId: 'svelte', criterionId: 'performance', score: 10, label: 'Fastest', timestamp: 1707600000000 },
+];
+
+<PughMatrixWidget
+  criteria={criteria}
+  tools={tools}
+  scores={scores}
+  persistKey="framework-comparison"
+  highlight="vue"
+  showWinner
+/>
 ```
+
+### 5. How the state wiring works
+
+Here's what's happening under the hood:
+
+1. **`createPughStore()`** creates a vanilla Zustand store instance containing all matrix state (criteria, tools, scores, weights, UI state).
+2. **`PughStoreProvider`** injects the store into React context so any `<PughMatrix>` below it can read from it.
+3. **`PughMatrix`** calls `usePughStore(selector)` internally to subscribe to slices of state. It never accepts data as props — it always reads from the store.
+4. **Persistence** is opt-in: pass `persistKey` + a `persister` to `createPughStore` and the store auto-saves/loads domain state (scores, weights, criteria, tools) while ignoring ephemeral UI state (which cell is being edited, etc.).
+5. **Multiple matrices** on the same page each get their own store instance, so they're fully independent.
+
+### 6. Accessing the store from outside the matrix
+
+If you need to read or modify matrix state from sibling components (e.g. an "Export to CSV" button), lift the store to a shared scope:
+
+```tsx
+// src/components/MatrixPage.tsx
+import { useMemo } from 'react';
+import { createPughStore, PughStoreProvider, PughMatrix, usePughStore } from 'decisionapp';
+
+function ExportButton() {
+  const scores = usePughStore((s) => s.scores);
+  return <button onClick={() => console.log(JSON.stringify(scores))}>Export</button>;
+}
+
+export default function MatrixPage({ criteria, tools, scores }) {
+  const store = useMemo(() => createPughStore({ criteria, tools, scores }), []);
+  return (
+    <PughStoreProvider store={store}>
+      <PughMatrix />
+      <ExportButton />
+    </PughStoreProvider>
+  );
+}
+```
+
+Both `<PughMatrix>` and `<ExportButton>` read from the same store because they share the same `PughStoreProvider`.
 
 ## Note on Docusaurus Infima (IFM)
 
@@ -309,15 +496,12 @@ However, Infima is tightly coupled to Docusaurus conventions and brings a full C
 
 ## Highlight example
 
-Call out a specific column:
+Call out a specific column by tool ID:
 
 ```tsx
-<PughMatrix
-  criteria={['Price', 'Durability', 'Style']}
-  tools={['Widget A', 'Widget B', 'Widget C']}
-  scores={scores}
-  highlight="Widget B"
-/>
+<PughStoreProvider store={store}>
+  <PughMatrix highlight="option-b" />
+</PughStoreProvider>
 ```
 
 The highlighted column gets a primary-color header and bordered cells.
@@ -331,14 +515,18 @@ npm run build   # outputs dist/ with CJS, ESM, types, and CSS
 
 ## Architecture & design decisions
 
-### Dual-mode component (controlled vs. store)
+### Store-only component
 
-The `PughMatrix` component supports two modes rather than forcing a migration:
+PughMatrix always reads data from a Zustand store via `PughStoreProvider`. There is no "controlled mode" where you pass `criteria`, `tools`, or `scores` as props. This keeps the component simple and avoids duplicating state management logic between a controlled and uncontrolled path.
 
-- **Controlled mode** preserves the original API (`criteria`/`tools`/`scores` props + `useState` internally). Existing consumers don't need to change anything.
-- **Store mode** activates when the component finds a `PughStoreProvider` in context and no data props are passed. This lets new consumers opt into Zustand without the old API being removed.
+To use PughMatrix:
+1. Call `createPughStore({ criteria, tools, scores })` to create a store
+2. Wrap `<PughMatrix>` in `<PughStoreProvider store={store}>`
+3. The component reads everything from the store
 
-Internally, both modes feed the same `PughMatrixView` rendering component, which is a pure function of resolved data + callbacks. This avoids duplicating the table rendering logic.
+### ID-based references
+
+Criteria and tools are `{ id, label }` objects. Score entries reference them by `toolId` and `criterionId` (stable IDs), not by display label. This means you can rename a criterion or tool label at any time without breaking existing score data. The store provides `renameTool(id, newLabel)` and `renameCriterion(id, newLabel)` actions for this purpose.
 
 ### Zustand over alternatives
 

@@ -1,44 +1,14 @@
-import { useState, useMemo, useContext } from 'react';
+import { useMemo } from 'react';
 import { HoverCard, Table, Theme } from '@radix-ui/themes';
 import type { ScoreEntry } from './types';
-import { PughStoreContext } from './store/usePughStore';
 import { usePughStore } from './store/usePughStore';
 import './pugh-matrix.css';
 
-/* ------------------------------------------------------------------ */
-/*  Props types                                                       */
-/* ------------------------------------------------------------------ */
-
-export interface PughMatrixControlledProps {
-  criteria: string[];
-  tools: string[];
-  scores: ScoreEntry[];
-  highlight?: string;
-  showWinner?: boolean;
-  isDark?: boolean;
-  onScoreAdd?: (entry: {
-    tool: string;
-    criterion: string;
-    score?: number;
-    label?: string;
-    comment?: string;
-  }) => void;
-}
-
-export interface PughMatrixStoreProps {
-  criteria?: undefined;
-  tools?: undefined;
-  scores?: undefined;
+export interface PughMatrixProps {
   highlight?: string;
   showWinner?: boolean;
   isDark?: boolean;
 }
-
-export type PughMatrixProps = PughMatrixControlledProps | PughMatrixStoreProps;
-
-/* ------------------------------------------------------------------ */
-/*  Helpers (shared)                                                  */
-/* ------------------------------------------------------------------ */
 
 const scoreColorCache = new Map<string, { bg: string; text: string }>();
 
@@ -77,81 +47,47 @@ function formatDate(timestamp: number): string {
   });
 }
 
-/* ------------------------------------------------------------------ */
-/*  Internal view props                                               */
-/* ------------------------------------------------------------------ */
-
-interface PughMatrixViewProps {
-  criteria: string[];
-  tools: string[];
-  scores: ScoreEntry[];
-  weights: Record<string, number>;
-  showTotals: boolean;
-  editingCell: { tool: string; criterion: string } | null;
-  editScore: string;
-  editLabel: string;
-  editComment: string;
-  highlight?: string;
-  showWinner?: boolean;
-  isDark?: boolean;
-  onWeightChange: (criterion: string, value: string) => void;
-  onCellClick: (tool: string, criterion: string) => void;
-  onEditScoreChange: (value: string) => void;
-  onEditLabelChange: (value: string) => void;
-  onEditCommentChange: (value: string) => void;
-  onEditSave: () => void;
-  onEditCancel: () => void;
-  onToggleTotals: () => void;
-  canEdit: boolean;
-}
-
-/* ------------------------------------------------------------------ */
-/*  PughMatrixView — pure rendering component                         */
-/* ------------------------------------------------------------------ */
-
-function PughMatrixView({
-  criteria,
-  tools,
-  scores,
-  weights,
-  showTotals,
-  editingCell,
-  editScore,
-  editLabel,
-  editComment,
+export default function PughMatrix({
   highlight,
   showWinner = false,
   isDark = false,
-  onWeightChange,
-  onCellClick,
-  onEditScoreChange,
-  onEditLabelChange,
-  onEditCommentChange,
-  onEditSave,
-  onEditCancel,
-  onToggleTotals,
-  canEdit,
-}: PughMatrixViewProps) {
+}: PughMatrixProps) {
+  const criteria = usePughStore((s) => s.criteria);
+  const tools = usePughStore((s) => s.tools);
+  const scores = usePughStore((s) => s.scores);
+  const weights = usePughStore((s) => s.weights);
+  const showTotals = usePughStore((s) => s.showTotals);
+  const editingCell = usePughStore((s) => s.editingCell);
+  const editScore = usePughStore((s) => s.editScore);
+  const editLabel = usePughStore((s) => s.editLabel);
+  const editComment = usePughStore((s) => s.editComment);
+  const setWeight = usePughStore((s) => s.setWeight);
+  const startEditing = usePughStore((s) => s.startEditing);
+  const cancelEditing = usePughStore((s) => s.cancelEditing);
+  const setEditScore = usePughStore((s) => s.setEditScore);
+  const setEditLabel = usePughStore((s) => s.setEditLabel);
+  const setEditComment = usePughStore((s) => s.setEditComment);
+  const addScore = usePughStore((s) => s.addScore);
+  const toggleTotals = usePughStore((s) => s.toggleTotals);
+
   const { latestByCell, historyByCell, weightedTotals, maxTotal, winner } =
     useMemo(() => {
-      const toolSet = new Set(tools);
-      const criterionSet = new Set(criteria);
+      const toolSet = new Set(tools.map((t) => t.id));
+      const criterionSet = new Set(criteria.map((c) => c.id));
       const history = new Map<string, ScoreEntry[]>();
       const latest = new Map<string, ScoreEntry>();
 
       for (const entry of scores) {
-        if (!toolSet.has(entry.tool) || !criterionSet.has(entry.criterion)) {
+        if (!toolSet.has(entry.toolId) || !criterionSet.has(entry.criterionId)) {
           throw new Error(
-            `PughMatrix: score entry "${entry.id}" references invalid tool "${entry.tool}" or criterion "${entry.criterion}". ` +
-            `Allowed tools: [${tools.join(', ')}]. Allowed criteria: [${criteria.join(', ')}].`,
+            `PughMatrix: score entry "${entry.id}" references invalid tool "${entry.toolId}" or criterion "${entry.criterionId}". ` +
+            `Allowed tools: [${tools.map((t) => t.id).join(', ')}]. Allowed criteria: [${criteria.map((c) => c.id).join(', ')}].`,
           );
         }
-        const key = `${entry.tool}\0${entry.criterion}`;
+        const key = `${entry.toolId}\0${entry.criterionId}`;
         const arr = history.get(key) ?? [];
         arr.push(entry);
         history.set(key, arr);
-        // Only track entries with a score as the "latest scored" entry,
-        // so comment-only entries don't overwrite the displayed score
         if (entry.score != null) {
           const prev = latest.get(key);
           if (!prev || entry.timestamp > prev.timestamp) {
@@ -170,17 +106,17 @@ function PughMatrixView({
       for (const tool of tools) {
         let total = 0;
         for (const criterion of criteria) {
-          const key = `${tool}\0${criterion}`;
+          const key = `${tool.id}\0${criterion.id}`;
           const entry = latest.get(key);
           const score = entry?.score ?? 0;
-          const weight = weights[criterion] ?? 10;
+          const weight = weights[criterion.id] ?? 10;
           total += score * weight;
         }
         const rounded = Math.round(total * 10) / 10;
-        totals[tool] = rounded;
+        totals[tool.id] = rounded;
         if (rounded > max) {
           max = rounded;
-          best = tool;
+          best = tool.id;
         }
       }
 
@@ -193,19 +129,61 @@ function PughMatrixView({
       };
     }, [scores, tools, criteria, weights, showWinner]);
 
-  const handleEditKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onEditCancel();
-    } else if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      onEditSave();
+  const handleWeightChange = (criterionId: string, value: string) => {
+    if (value === '') {
+      setWeight(criterionId, 0);
+      return;
+    }
+    const num = Math.round(Number(value));
+    if (!isNaN(num) && num >= 0 && num <= 10) {
+      setWeight(criterionId, num);
     }
   };
 
-  const isHighlighted = (tool: string) => highlight && tool === highlight;
-  const isWinner = (tool: string) => winner && tool === winner;
-  const isEditing = (tool: string, criterion: string) =>
-    editingCell?.tool === tool && editingCell?.criterion === criterion;
+  const handleEditScoreChange = (value: string) => {
+    if (value === '') {
+      setEditScore('');
+      return;
+    }
+    const num = Math.round(Number(value));
+    if (!isNaN(num) && num >= 1 && num <= 10) {
+      setEditScore(String(num));
+    }
+  };
+
+  const handleEditSave = () => {
+    if (!editingCell) return;
+    const scoreNum = editScore ? Number(editScore) : undefined;
+    if (scoreNum != null && (isNaN(scoreNum) || scoreNum < 1 || scoreNum > 10)) return;
+    const trimmedLabel = editLabel.trim() || undefined;
+    const trimmedComment = editComment.trim() || undefined;
+    if (scoreNum != null && !trimmedLabel) return;
+    if (scoreNum == null && !trimmedComment) return;
+    addScore({
+      id: `score-${Date.now()}`,
+      toolId: editingCell.toolId,
+      criterionId: editingCell.criterionId,
+      score: scoreNum,
+      label: trimmedLabel,
+      comment: trimmedComment,
+      timestamp: Date.now(),
+    });
+    cancelEditing();
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      cancelEditing();
+    } else if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleEditSave();
+    }
+  };
+
+  const isHighlighted = (toolId: string) => highlight && toolId === highlight;
+  const isWinner = (toolId: string) => winner && toolId === winner;
+  const isEditing = (toolId: string, criterionId: string) =>
+    editingCell?.toolId === toolId && editingCell?.criterionId === criterionId;
 
   return (
     <Theme appearance={isDark ? 'dark' : 'light'} accentColor="green" hasBackground={false}>
@@ -217,31 +195,31 @@ function PughMatrixView({
               <Table.ColumnHeaderCell width="72px">Weight</Table.ColumnHeaderCell>
               {tools.map((tool) => (
                 <Table.ColumnHeaderCell
-                  key={tool}
-                  className={`pugh-tool-header${isWinner(tool) ? ' pugh-winner-header' : isHighlighted(tool) ? ' pugh-highlight-header' : ''}`}
+                  key={tool.id}
+                  className={`pugh-tool-header${isWinner(tool.id) ? ' pugh-winner-header' : isHighlighted(tool.id) ? ' pugh-highlight-header' : ''}`}
                 >
-                  {isWinner(tool) ? `👑 ${tool}` : tool}
+                  {isWinner(tool.id) ? `👑 ${tool.label}` : tool.label}
                 </Table.ColumnHeaderCell>
               ))}
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {criteria.map((criterion) => (
-              <Table.Row key={criterion}>
-                <Table.RowHeaderCell className="pugh-criterion-cell">{criterion}</Table.RowHeaderCell>
+              <Table.Row key={criterion.id}>
+                <Table.RowHeaderCell className="pugh-criterion-cell">{criterion.label}</Table.RowHeaderCell>
                 <Table.Cell className="pugh-weight-cell">
                   <input
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    aria-label={`Weight for ${criterion}`}
-                    value={weights[criterion]}
-                    onChange={(e) => onWeightChange(criterion, e.target.value)}
+                    aria-label={`Weight for ${criterion.label}`}
+                    value={weights[criterion.id]}
+                    onChange={(e) => handleWeightChange(criterion.id, e.target.value)}
                     className="pugh-weight-input"
                   />
                 </Table.Cell>
                 {tools.map((tool) => {
-                  const cellKey = `${tool}\0${criterion}`;
+                  const cellKey = `${tool.id}\0${criterion.id}`;
                   const entry = latestByCell.get(cellKey);
                   const score = entry?.score;
                   const label = entry?.label;
@@ -250,17 +228,17 @@ function PughMatrixView({
                     ? getScoreColor(score, isDark)
                     : { bg: 'transparent', text: 'inherit' };
                   const history = historyByCell.get(cellKey);
-                  const editing = isEditing(tool, criterion);
+                  const editing = isEditing(tool.id, criterion.id);
 
                   return (
                     <Table.Cell
-                      key={tool}
-                      className={`pugh-score-cell${canEdit ? ' pugh-score-cell-editable' : ''}${isWinner(tool) ? ' pugh-winner-cell' : isHighlighted(tool) ? ' pugh-highlight-cell' : ''}`}
+                      key={tool.id}
+                      className={`pugh-score-cell pugh-score-cell-editable${isWinner(tool.id) ? ' pugh-winner-cell' : isHighlighted(tool.id) ? ' pugh-highlight-cell' : ''}`}
                       style={{
                         backgroundColor: colors.bg,
                         color: colors.text,
                       }}
-                      onClick={() => onCellClick(tool, criterion)}
+                      onClick={() => startEditing(tool.id, criterion.id)}
                     >
                       {editing ? (
                         <div
@@ -272,9 +250,9 @@ function PughMatrixView({
                             inputMode="numeric"
                             pattern="[0-9]*"
                             placeholder="Score 1-10 (optional)"
-                            aria-label={`Score for ${tool}, ${criterion}`}
+                            aria-label={`Score for ${tool.label}, ${criterion.label}`}
                             value={editScore}
-                            onChange={(e) => onEditScoreChange(e.target.value)}
+                            onChange={(e) => handleEditScoreChange(e.target.value)}
                             onKeyDown={handleEditKeyDown}
                             className="pugh-edit-input"
                             autoFocus
@@ -282,27 +260,27 @@ function PughMatrixView({
                           <input
                             type="text"
                             placeholder="Label (optional)"
-                            aria-label={`Label for ${tool}, ${criterion}`}
+                            aria-label={`Label for ${tool.label}, ${criterion.label}`}
                             value={editLabel}
-                            onChange={(e) => onEditLabelChange(e.target.value)}
+                            onChange={(e) => setEditLabel(e.target.value)}
                             onKeyDown={handleEditKeyDown}
                             className="pugh-edit-input"
                             maxLength={30}
                           />
                           <textarea
                             placeholder="Comment (optional)"
-                            aria-label={`Comment for ${tool}, ${criterion}`}
+                            aria-label={`Comment for ${tool.label}, ${criterion.label}`}
                             value={editComment}
-                            onChange={(e) => onEditCommentChange(e.target.value)}
+                            onChange={(e) => setEditComment(e.target.value)}
                             onKeyDown={handleEditKeyDown}
                             className="pugh-edit-comment"
                             rows={2}
                           />
                           <div className="pugh-edit-actions">
-                            <button type="button" onClick={onEditSave}>
+                            <button type="button" onClick={handleEditSave}>
                               Save
                             </button>
-                            <button type="button" onClick={onEditCancel}>
+                            <button type="button" onClick={cancelEditing}>
                               Cancel
                             </button>
                           </div>
@@ -354,15 +332,15 @@ function PughMatrixView({
                 <Table.RowHeaderCell className="pugh-total-label">Weighted Total</Table.RowHeaderCell>
                 <Table.Cell className="pugh-weight-cell" />
                 {tools.map((tool) => {
-                  const total = weightedTotals[tool];
+                  const total = weightedTotals[tool.id];
                   const colors = getScoreColor(
                     (total / maxTotal) * 10,
                     isDark,
                   );
                   return (
                     <Table.Cell
-                      key={tool}
-                      className={`pugh-total-cell${isWinner(tool) ? ' pugh-winner-cell' : isHighlighted(tool) ? ' pugh-highlight-cell' : ''}`}
+                      key={tool.id}
+                      className={`pugh-total-cell${isWinner(tool.id) ? ' pugh-winner-cell' : isHighlighted(tool.id) ? ' pugh-highlight-cell' : ''}`}
                       style={{
                         backgroundColor: colors.bg,
                         color: colors.text,
@@ -378,246 +356,12 @@ function PughMatrixView({
         </Table.Root>
         <button
           className="pugh-toggle-button"
-          onClick={onToggleTotals}
+          onClick={toggleTotals}
           type="button"
         >
           {showTotals ? 'Hide Totals' : 'Show Totals'}
         </button>
       </div>
     </Theme>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Controlled mode wrapper (backward-compatible)                     */
-/* ------------------------------------------------------------------ */
-
-function PughMatrixControlled({
-  criteria,
-  tools,
-  scores,
-  highlight,
-  showWinner = false,
-  isDark = false,
-  onScoreAdd,
-}: PughMatrixControlledProps) {
-  const [weights, setWeights] = useState<Record<string, number>>(() =>
-    Object.fromEntries(criteria.map((c) => [c, 10])),
-  );
-
-  const [showTotals, setShowTotals] = useState(false);
-  const [editingCell, setEditingCell] = useState<{
-    tool: string;
-    criterion: string;
-  } | null>(null);
-  const [editScore, setEditScore] = useState('');
-  const [editLabel, setEditLabel] = useState('');
-  const [editComment, setEditComment] = useState('');
-
-  const handleWeightChange = (criterion: string, value: string) => {
-    if (value === '') {
-      setWeights((prev) => ({ ...prev, [criterion]: 0 }));
-      return;
-    }
-    const num = Math.round(Number(value));
-    if (!isNaN(num) && num >= 0 && num <= 10) {
-      setWeights((prev) => ({ ...prev, [criterion]: num }));
-    }
-  };
-
-  const handleCellClick = (tool: string, criterion: string) => {
-    if (!onScoreAdd) return;
-    setEditingCell({ tool, criterion });
-    setEditScore('');
-    setEditLabel('');
-    setEditComment('');
-  };
-
-  const handleEditScoreChange = (value: string) => {
-    if (value === '') {
-      setEditScore('');
-      return;
-    }
-    const num = Math.round(Number(value));
-    if (!isNaN(num) && num >= 1 && num <= 10) {
-      setEditScore(String(num));
-    }
-  };
-
-  const handleEditSave = () => {
-    if (!editingCell || !onScoreAdd) return;
-    const scoreNum = editScore ? Number(editScore) : undefined;
-    if (scoreNum != null && (isNaN(scoreNum) || scoreNum < 1 || scoreNum > 10)) return;
-    const trimmedLabel = editLabel.trim() || undefined;
-    const trimmedComment = editComment.trim() || undefined;
-    // If a score is provided, label is required
-    if (scoreNum != null && !trimmedLabel) return;
-    // Require at least one of score or comment
-    if (scoreNum == null && !trimmedComment) return;
-    onScoreAdd({
-      tool: editingCell.tool,
-      criterion: editingCell.criterion,
-      score: scoreNum,
-      label: trimmedLabel,
-      comment: trimmedComment,
-    });
-    setEditingCell(null);
-  };
-
-  const handleEditCancel = () => {
-    setEditingCell(null);
-  };
-
-  return (
-    <PughMatrixView
-      criteria={criteria}
-      tools={tools}
-      scores={scores}
-      weights={weights}
-      showTotals={showTotals}
-      editingCell={editingCell}
-      editScore={editScore}
-      editLabel={editLabel}
-      editComment={editComment}
-      highlight={highlight}
-      showWinner={showWinner}
-      isDark={isDark}
-      onWeightChange={handleWeightChange}
-      onCellClick={handleCellClick}
-      onEditScoreChange={handleEditScoreChange}
-      onEditLabelChange={(v) => setEditLabel(v)}
-      onEditCommentChange={(v) => setEditComment(v)}
-      onEditSave={handleEditSave}
-      onEditCancel={handleEditCancel}
-      onToggleTotals={() => setShowTotals((prev) => !prev)}
-      canEdit={!!onScoreAdd}
-    />
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Store mode wrapper                                                */
-/* ------------------------------------------------------------------ */
-
-function PughMatrixStoreMode({
-  highlight,
-  showWinner = false,
-  isDark = false,
-}: PughMatrixStoreProps) {
-  const criteria = usePughStore((s) => s.criteria);
-  const tools = usePughStore((s) => s.tools);
-  const scores = usePughStore((s) => s.scores);
-  const weights = usePughStore((s) => s.weights);
-  const showTotals = usePughStore((s) => s.showTotals);
-  const editingCell = usePughStore((s) => s.editingCell);
-  const editScore = usePughStore((s) => s.editScore);
-  const editLabel = usePughStore((s) => s.editLabel);
-  const editComment = usePughStore((s) => s.editComment);
-  const setWeight = usePughStore((s) => s.setWeight);
-  const startEditing = usePughStore((s) => s.startEditing);
-  const cancelEditing = usePughStore((s) => s.cancelEditing);
-  const setEditScoreAction = usePughStore((s) => s.setEditScore);
-  const setEditLabelAction = usePughStore((s) => s.setEditLabel);
-  const setEditCommentAction = usePughStore((s) => s.setEditComment);
-  const addScore = usePughStore((s) => s.addScore);
-  const toggleTotals = usePughStore((s) => s.toggleTotals);
-
-  const handleWeightChange = (criterion: string, value: string) => {
-    if (value === '') {
-      setWeight(criterion, 0);
-      return;
-    }
-    const num = Math.round(Number(value));
-    if (!isNaN(num) && num >= 0 && num <= 10) {
-      setWeight(criterion, num);
-    }
-  };
-
-  const handleCellClick = (tool: string, criterion: string) => {
-    startEditing(tool, criterion);
-  };
-
-  const handleEditScoreChange = (value: string) => {
-    if (value === '') {
-      setEditScoreAction('');
-      return;
-    }
-    const num = Math.round(Number(value));
-    if (!isNaN(num) && num >= 1 && num <= 10) {
-      setEditScoreAction(String(num));
-    }
-  };
-
-  const handleEditSave = () => {
-    if (!editingCell) return;
-    const scoreNum = editScore ? Number(editScore) : undefined;
-    if (scoreNum != null && (isNaN(scoreNum) || scoreNum < 1 || scoreNum > 10)) return;
-    const trimmedLabel = editLabel.trim() || undefined;
-    const trimmedComment = editComment.trim() || undefined;
-    // If a score is provided, label is required
-    if (scoreNum != null && !trimmedLabel) return;
-    // Require at least one of score or comment
-    if (scoreNum == null && !trimmedComment) return;
-    addScore({
-      id: `store-${Date.now()}`,
-      tool: editingCell.tool,
-      criterion: editingCell.criterion,
-      score: scoreNum,
-      label: trimmedLabel,
-      comment: trimmedComment,
-      timestamp: Date.now(),
-    });
-    cancelEditing();
-  };
-
-  return (
-    <PughMatrixView
-      criteria={criteria}
-      tools={tools}
-      scores={scores}
-      weights={weights}
-      showTotals={showTotals}
-      editingCell={editingCell}
-      editScore={editScore}
-      editLabel={editLabel}
-      editComment={editComment}
-      highlight={highlight}
-      showWinner={showWinner}
-      isDark={isDark}
-      onWeightChange={handleWeightChange}
-      onCellClick={handleCellClick}
-      onEditScoreChange={handleEditScoreChange}
-      onEditLabelChange={setEditLabelAction}
-      onEditCommentChange={setEditCommentAction}
-      onEditSave={handleEditSave}
-      onEditCancel={cancelEditing}
-      onToggleTotals={toggleTotals}
-      canEdit={true}
-    />
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Public component — auto-selects mode                              */
-/* ------------------------------------------------------------------ */
-
-function isControlledProps(props: PughMatrixProps): props is PughMatrixControlledProps {
-  return 'criteria' in props && props.criteria !== undefined;
-}
-
-export default function PughMatrix(props: PughMatrixProps) {
-  const storeCtx = useContext(PughStoreContext);
-
-  if (isControlledProps(props)) {
-    return <PughMatrixControlled {...props} />;
-  }
-
-  if (storeCtx) {
-    return <PughMatrixStoreMode {...props} />;
-  }
-
-  throw new Error(
-    'PughMatrix: either pass criteria/tools/scores props (controlled mode) ' +
-    'or wrap in a <PughStoreProvider> (store mode).',
   );
 }

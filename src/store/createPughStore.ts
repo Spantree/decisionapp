@@ -1,12 +1,12 @@
 import { createStore } from 'zustand/vanilla';
 import { devtools, persist, createJSONStorage } from 'zustand/middleware';
-import type { ScoreEntry } from '../types';
+import type { Criterion, Tool, ScoreEntry } from '../types';
 import type { Persister } from '../persist/types';
 import type { PughStore, PughDomainState } from './types';
 
 export interface CreatePughStoreOptions {
-  criteria?: string[];
-  tools?: string[];
+  criteria?: Criterion[];
+  tools?: Tool[];
   scores?: ScoreEntry[];
   weights?: Record<string, number>;
   persistKey?: string;
@@ -33,8 +33,8 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
 
   const initialWeights: Record<string, number> = { ...weights };
   for (const c of criteria) {
-    if (!(c in initialWeights)) {
-      initialWeights[c] = 10;
+    if (!(c.id in initialWeights)) {
+      initialWeights[c.id] = 10;
     }
   }
 
@@ -50,19 +50,19 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     editScore: '',
     editLabel: '',
     editComment: '',
-    setCriteria: (criteria: string[]) => set(() => ({ criteria })),
-    setTools: (tools: string[]) => set(() => ({ tools })),
+    setCriteria: (criteria: Criterion[]) => set(() => ({ criteria })),
+    setTools: (tools: Tool[]) => set(() => ({ tools })),
     addScore: (entry: ScoreEntry) =>
       set((state) => ({ scores: [...state.scores, entry] })),
-    setWeight: (criterion: string, weight: number) =>
+    setWeight: (criterionId: string, weight: number) =>
       set((state) => ({
-        weights: { ...state.weights, [criterion]: weight },
+        weights: { ...state.weights, [criterionId]: weight },
       })),
     setShowTotals: (show: boolean) => set(() => ({ showTotals: show })),
     toggleTotals: () => set((state) => ({ showTotals: !state.showTotals })),
-    startEditing: (tool: string, criterion: string) =>
+    startEditing: (toolId: string, criterionId: string) =>
       set(() => ({
-        editingCell: { tool, criterion },
+        editingCell: { toolId, criterionId },
         editScore: '',
         editLabel: '',
         editComment: '',
@@ -71,6 +71,18 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     setEditScore: (editScore: string) => set(() => ({ editScore })),
     setEditLabel: (editLabel: string) => set(() => ({ editLabel })),
     setEditComment: (editComment: string) => set(() => ({ editComment })),
+    renameTool: (id: string, newLabel: string) =>
+      set((state) => ({
+        tools: state.tools.map((t) =>
+          t.id === id ? { ...t, label: newLabel } : t,
+        ),
+      })),
+    renameCriterion: (id: string, newLabel: string) =>
+      set((state) => ({
+        criteria: state.criteria.map((c) =>
+          c.id === id ? { ...c, label: newLabel } : c,
+        ),
+      })),
   });
 
   if (!persister) {
@@ -83,6 +95,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     devtools(
       persist(storeCreator, {
         name: persistKey,
+        version: 1,
         storage: createPughStorageAdapter(persister),
         partialize: (state) =>
           ({

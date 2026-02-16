@@ -3,6 +3,9 @@ import { devtools, persist, createJSONStorage } from 'zustand/middleware';
 import type { Criterion, Tool, ScoreEntry } from '../types';
 import type { Persister } from '../persist/types';
 import type { PughStore, PughDomainState } from './types';
+import type { PughEvent, Branch } from '../events/types';
+import { projectEvents } from '../events/projection';
+import { seedEventsFromOptions } from '../events/seedFromLegacy';
 
 export interface CreatePughStoreOptions {
   criteria?: Criterion[];
@@ -21,6 +24,20 @@ function createPughStorageAdapter(persister: Persister) {
   }));
 }
 
+function makeEvent(type: PughEvent['type'], payload: Record<string, unknown>): PughEvent {
+  return {
+    id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    timestamp: Date.now(),
+    user: 'anonymous',
+    type,
+    ...payload,
+  } as PughEvent;
+}
+
+function getActiveBranch(branches: Branch[], activeBranchId: string): Branch {
+  return branches.find((b) => b.id === activeBranchId)!;
+}
+
 export function createPughStore(options: CreatePughStoreOptions = {}) {
   const {
     criteria = [],
@@ -31,18 +48,83 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     persister,
   } = options;
 
-  const initialWeights: Record<string, number> = { ...weights };
-  for (const c of criteria) {
-    if (!(c.id in initialWeights)) {
-      initialWeights[c.id] = 10;
-    }
-  }
+  const initialEvents = seedEventsFromOptions({ criteria, tools, scores, weights });
+  const initialDomain = projectEvents(initialEvents);
+  const mainBranch: Branch = {
+    id: 'main',
+    name: 'main',
+    events: initialEvents,
+    createdAt: Date.now(),
+  };
 
-  const storeCreator: StateCreator<PughStore> = (set) => ({
-    criteria,
-    tools,
-    scores,
-    weights: initialWeights,
+  const storeCreator: StateCreator<PughStore> = (set, get) => ({
+    // Domain state (projected from events)
+    ...initialDomain,
+
+    // Event store state
+    branches: [mainBranch],
+    activeBranchId: 'main',
+
+    // Event store actions
+    dispatch: (event: PughEvent) => {
+      const state = get();
+      const branches = state.branches.map((b) =>
+        b.id === state.activeBranchId
+          ? { ...b, events: [...b.events, event] }
+          : b,
+      );
+      const activeBranch = getActiveBranch(branches, state.activeBranchId);
+      const domain = projectEvents(activeBranch.events);
+      set({ branches, ...domain });
+    },
+
+    createBranch: (name: string) => {
+      const state = get();
+      const parentBranch = getActiveBranch(state.branches, state.activeBranchId);
+      const newBranch: Branch = {
+        id: `branch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name,
+        events: [...parentBranch.events],
+        createdAt: Date.now(),
+        parentBranchId: parentBranch.id,
+        forkEventIndex: parentBranch.events.length,
+      };
+      set({
+        branches: [...state.branches, newBranch],
+        activeBranchId: newBranch.id,
+      });
+    },
+
+    switchBranch: (branchId: string) => {
+      const state = get();
+      const branch = state.branches.find((b) => b.id === branchId);
+      if (!branch) return;
+      const domain = projectEvents(branch.events);
+      set({ activeBranchId: branchId, ...domain });
+    },
+
+    renameBranch: (branchId: string, name: string) => {
+      const state = get();
+      set({
+        branches: state.branches.map((b) =>
+          b.id === branchId ? { ...b, name } : b,
+        ),
+      });
+    },
+
+    deleteBranch: (branchId: string) => {
+      const state = get();
+      if (branchId === 'main') return;
+      const remaining = state.branches.filter((b) => b.id !== branchId);
+      if (state.activeBranchId === branchId) {
+        const domain = projectEvents(remaining[0].events);
+        set({ branches: remaining, activeBranchId: remaining[0].id, ...domain });
+      } else {
+        set({ branches: remaining });
+      }
+    },
+
+    // UI state
     showTotals: false,
     showWeights: false,
     editingCell: null,
@@ -51,14 +133,50 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     editComment: '',
     editingHeader: null,
     editHeaderValue: '',
-    setCriteria: (criteria: Criterion[]) => set(() => ({ criteria })),
-    setTools: (tools: Tool[]) => set(() => ({ tools })),
-    addScore: (entry: ScoreEntry) =>
-      set((state) => ({ scores: [...state.scores, entry] })),
-    setWeight: (criterionId: string, weight: number) =>
-      set((state) => ({
-        weights: { ...state.weights, [criterionId]: weight },
-      })),
+
+    // Domain actions (thin wrappers around dispatch)
+    addScore: (entry: ScoreEntry) => {
+      get().dispatch(
+        makeEvent('ScoreSet', {
+          toolId: entry.toolId,
+          criterionId: entry.criterionId,
+          score: entry.score,
+          label: entry.label,
+          comment: entry.comment,
+          user: entry.user,
+        }),
+      );
+    },
+
+    setWeight: (criterionId: string, weight: number) => {
+      get().dispatch(makeEvent('WeightSet', { criterionId, weight }));
+    },
+
+    addTool: (id: string, label: string, user: string) => {
+      get().dispatch(makeEvent('ToolAdded', { toolId: id, label, user }));
+    },
+
+    removeTool: (id: string) => {
+      get().dispatch(makeEvent('ToolRemoved', { toolId: id }));
+    },
+
+    addCriterion: (id: string, label: string) => {
+      get().dispatch(makeEvent('CriterionAdded', { criterionId: id, label }));
+    },
+
+    removeCriterion: (id: string) => {
+      get().dispatch(makeEvent('CriterionRemoved', { criterionId: id }));
+    },
+
+    renameTool: (id: string, newLabel: string) => {
+      get().dispatch(makeEvent('ToolRenamed', { toolId: id, newLabel }));
+    },
+
+    renameCriterion: (id: string, newLabel: string) => {
+      get().dispatch(makeEvent('CriterionRenamed', { criterionId: id, newLabel }));
+    },
+
+    // UI actions
     setShowTotals: (show: boolean) => set(() => ({ showTotals: show })),
     toggleTotals: () => set((state) => ({ showTotals: !state.showTotals })),
     setShowWeights: (show: boolean) => set(() => ({ showWeights: show })),
@@ -74,44 +192,6 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     setEditScore: (editScore: string) => set(() => ({ editScore })),
     setEditLabel: (editLabel: string) => set(() => ({ editLabel })),
     setEditComment: (editComment: string) => set(() => ({ editComment })),
-    addTool: (id: string, label: string) =>
-      set((state) => ({
-        tools: [...state.tools, { id, label }],
-      })),
-    removeTool: (id: string) =>
-      set((state) => ({
-        tools: state.tools.filter((t) => t.id !== id),
-        scores: state.scores.filter((s) => s.toolId !== id),
-      })),
-    addCriterion: (id: string, label: string) =>
-      set((state) => ({
-        criteria: [...state.criteria, { id, label, user: 'anonymous' }],
-        weights: { ...state.weights, [id]: 10 },
-      })),
-    removeCriterion: (id: string) =>
-      set((state) => {
-        const newWeights: Record<string, number> = {};
-        for (const [k, v] of Object.entries(state.weights)) {
-          if (k !== id) newWeights[k] = v;
-        }
-        return {
-          criteria: state.criteria.filter((c) => c.id !== id),
-          scores: state.scores.filter((s) => s.criterionId !== id),
-          weights: newWeights,
-        };
-      }),
-    renameTool: (id: string, newLabel: string) =>
-      set((state) => ({
-        tools: state.tools.map((t) =>
-          t.id === id ? { ...t, label: newLabel } : t,
-        ),
-      })),
-    renameCriterion: (id: string, newLabel: string) =>
-      set((state) => ({
-        criteria: state.criteria.map((c) =>
-          c.id === id ? { ...c, label: newLabel } : c,
-        ),
-      })),
     startEditingHeader: (type: 'tool' | 'criterion', id: string) =>
       set((state) => {
         const items = type === 'tool' ? state.tools : state.criteria;
@@ -123,25 +203,19 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       }),
     cancelEditingHeader: () => set(() => ({ editingHeader: null, editHeaderValue: '' })),
     setEditHeaderValue: (editHeaderValue: string) => set(() => ({ editHeaderValue })),
-    saveHeaderEdit: () =>
-      set((state) => {
-        if (!state.editingHeader) return {};
-        const trimmed = state.editHeaderValue.trim();
-        if (!trimmed) return {};
-        const { type, id } = state.editingHeader;
-        if (type === 'tool') {
-          return {
-            tools: state.tools.map((t) => (t.id === id ? { ...t, label: trimmed } : t)),
-            editingHeader: null,
-            editHeaderValue: '',
-          };
-        }
-        return {
-          criteria: state.criteria.map((c) => (c.id === id ? { ...c, label: trimmed } : c)),
-          editingHeader: null,
-          editHeaderValue: '',
-        };
-      }),
+    saveHeaderEdit: () => {
+      const state = get();
+      if (!state.editingHeader) return;
+      const trimmed = state.editHeaderValue.trim();
+      if (!trimmed) return;
+      const { type, id } = state.editingHeader;
+      if (type === 'tool') {
+        state.dispatch(makeEvent('ToolRenamed', { toolId: id, newLabel: trimmed }));
+      } else {
+        state.dispatch(makeEvent('CriterionRenamed', { criterionId: id, newLabel: trimmed }));
+      }
+      set({ editingHeader: null, editHeaderValue: '' });
+    },
   });
 
   if (!persister) {
@@ -154,15 +228,24 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     devtools(
       persist(storeCreator, {
         name: persistKey,
-        version: 1,
+        version: 2,
         storage: createPughStorageAdapter(persister),
         partialize: (state) =>
           ({
-            criteria: state.criteria,
-            tools: state.tools,
-            scores: state.scores,
-            weights: state.weights,
+            branches: state.branches,
+            activeBranchId: state.activeBranchId,
           }) as unknown as PughStore,
+        merge: (persisted, current) => {
+          const merged = { ...current, ...(persisted as Partial<PughStore>) };
+          if (merged.branches && merged.activeBranchId) {
+            const branch = getActiveBranch(merged.branches, merged.activeBranchId);
+            if (branch) {
+              const domain = projectEvents(branch.events);
+              return { ...merged, ...domain };
+            }
+          }
+          return merged;
+        },
       }),
       { name: `PughMatrix(${persistKey})` },
     ),

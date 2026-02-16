@@ -340,3 +340,221 @@
 .pugh-container tbody tr:nth-last-child(2) .pugh-winner-cell {
   border-bottom: 2.5px solid #d4a017 !important;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Branch selector                                                    */
+/* ------------------------------------------------------------------ */
+
+.pugh-branch-bar {
+  --pugh-border-color: #dee2e6;
+  --pugh-head-bg: #f8f9fa;
+  --pugh-head-text: #1c1e21;
+  --pugh-bg: #ffffff;
+  --pugh-text: #1c1e21;
+  --pugh-primary: #2e8555;
+
+  position: relative;
+  display: inline-block;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.85rem;
+  color: var(--pugh-text);
+}
+
+.pugh-branch-bar.pugh-dark {
+  --pugh-border-color: #444;
+  --pugh-head-bg: #363636;
+  --pugh-head-text: #f5f5f5;
+  --pugh-bg: #1e1e1e;
+  --pugh-text: #e3e3e3;
+  --pugh-primary: #4caf7d;
+}
+
+.pugh-branch-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--pugh-primary);
+  background: var(--pugh-bg);
+  border: 1px solid var(--pugh-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.pugh-branch-trigger:hover {
+  background: var(--pugh-primary);
+  color: #fff;
+}
+
+.pugh-branch-trigger-arrow {
+  font-size: 0.6rem;
+  margin-left: 0.2rem;
+}
+
+.pugh-branch-item-badge {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.3;
+  border-radius: 10px;
+  background: var(--pugh-head-bg);
+  color: var(--pugh-head-text);
+}
+
+.pugh-branch-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  min-width: 220px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--pugh-bg);
+  border: 1px solid var(--pugh-border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.pugh-dark .pugh-branch-dropdown {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.pugh-branch-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background-color 0.1s ease;
+}
+
+.pugh-branch-item:hover {
+  background: var(--pugh-head-bg);
+}
+
+.pugh-branch-item-active {
+  border-left-color: var(--pugh-primary);
+  font-weight: 600;
+}
+
+.pugh-branch-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pugh-branch-delete-button {
+  flex-shrink: 0;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+  color: var(--pugh-text);
+}
+
+.pugh-branch-item:hover .pugh-branch-delete-button {
+  opacity: 0.6;
+}
+
+.pugh-branch-delete-button:hover {
+  opacity: 1 !important;
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.pugh-dark .pugh-branch-delete-button:hover {
+  background: #451a1a;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.pugh-branch-edit-input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0.2rem 0.3rem;
+  font-size: inherit;
+  font-weight: inherit;
+  border: 1px solid var(--pugh-primary);
+  border-radius: 4px;
+  background: var(--pugh-bg);
+  color: var(--pugh-text);
+}
+
+.pugh-branch-edit-input:focus {
+  outline: 2px solid var(--pugh-primary);
+  outline-offset: -1px;
+}
+
+.pugh-branch-new-row {
+  padding: 0.35rem 0.6rem;
+  border-top: 1px solid var(--pugh-border-color);
+}
+
+.pugh-branch-new-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--pugh-primary);
+  background: transparent;
+  border: 1px dashed var(--pugh-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.pugh-branch-new-button:hover {
+  background: var(--pugh-primary);
+  color: #fff;
+}
+
+.pugh-branch-new-input-row {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.35rem 0.6rem;
+  border-top: 1px solid var(--pugh-border-color);
+}
+
+.pugh-branch-new-input-row .pugh-branch-edit-input {
+  flex: 1;
+}
+
+.pugh-branch-create-button {
+  flex-shrink: 0;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--pugh-primary);
+  color: #fff;
+  border: 1px solid var(--pugh-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.pugh-branch-create-button:hover {
+  opacity: 0.85;
+}

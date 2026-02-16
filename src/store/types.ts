@@ -1,10 +1,24 @@
-import type { Criterion, Tool, ScoreEntry } from '../types';
+import type { ScoreEntry } from '../types';
+import type { PughEvent, Branch } from '../events/types';
 
 export interface PughDomainState {
-  criteria: Criterion[];
-  tools: Tool[];
+  criteria: import('../types').Criterion[];
+  tools: import('../types').Tool[];
   scores: ScoreEntry[];
   weights: Record<string, number>;
+}
+
+export interface PughEventStoreState {
+  branches: Branch[];
+  activeBranchId: string;
+}
+
+export interface PughEventStoreActions {
+  dispatch: (event: PughEvent) => void;
+  createBranch: (name: string) => void;
+  switchBranch: (branchId: string) => void;
+  renameBranch: (branchId: string, name: string) => void;
+  deleteBranch: (branchId: string) => void;
 }
 
 export interface PughUIState {
@@ -19,8 +33,6 @@ export interface PughUIState {
 }
 
 export interface PughActions {
-  setCriteria: (criteria: Criterion[]) => void;
-  setTools: (tools: Tool[]) => void;
   addScore: (entry: ScoreEntry) => void;
   setWeight: (criterionId: string, weight: number) => void;
   setShowTotals: (show: boolean) => void;
@@ -34,7 +46,7 @@ export interface PughActions {
   setEditComment: (comment: string) => void;
   renameTool: (id: string, newLabel: string) => void;
   renameCriterion: (id: string, newLabel: string) => void;
-  addTool: (id: string, label: string) => void;
+  addTool: (id: string, label: string, user: string) => void;
   removeTool: (id: string) => void;
   addCriterion: (id: string, label: string) => void;
   removeCriterion: (id: string) => void;
@@ -44,4 +56,4 @@ export interface PughActions {
   saveHeaderEdit: () => void;
 }
 
-export type PughStore = PughDomainState & PughUIState & PughActions;
+export type PughStore = PughDomainState & PughEventStoreState & PughEventStoreActions & PughUIState & PughActions;

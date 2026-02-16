@@ -218,7 +218,7 @@ export default function PughMatrix({
 
   const handleAddTool = () => {
     const id = `tool-${Date.now()}`;
-    addTool(id, 'New Tool');
+    addTool(id, 'New Tool', 'anonymous');
     startEditingHeader('tool', id);
   };
 

@@ -9,3 +9,10 @@ export type { PughStoreProviderProps, PughDomainState, PughUIState, PughActions,
 
 export { createPughStorage, createLocalStoragePersister } from './persist';
 export type { Persister } from './persist';
+
+export type { PughEvent, Branch } from './events';
+export { projectEvents, seedEventsFromOptions } from './events';
+export type { PughEventStoreState, PughEventStoreActions } from './store/types';
+
+export { BranchSelector } from './BranchSelector';
+export type { BranchSelectorProps } from './BranchSelector';

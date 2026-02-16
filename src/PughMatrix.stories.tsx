@@ -16,10 +16,10 @@ const criteria: Criterion[] = [
   { id: 'docs', label: 'Documentation', user: 'alice' },
 ];
 const tools: Tool[] = [
-  { id: 'react', label: 'React' },
-  { id: 'vue', label: 'Vue' },
-  { id: 'svelte', label: 'Svelte' },
-  { id: 'angular', label: 'Angular' },
+  { id: 'react', label: 'React', user: 'alice' },
+  { id: 'vue', label: 'Vue', user: 'alice' },
+  { id: 'svelte', label: 'Svelte', user: 'alice' },
+  { id: 'angular', label: 'Angular', user: 'alice' },
 ];
 
 let idCounter = 0;

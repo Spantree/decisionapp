@@ -7,6 +7,7 @@ export interface Criterion {
 export interface Tool {
   id: string;
   label: string;
+  user: string;
 }
 
 export interface ScoreEntry {

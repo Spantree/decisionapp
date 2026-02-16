@@ -306,6 +306,8 @@
 .pugh-highlight-header {
   background: var(--pugh-primary) !important;
   color: #fff !important;
+  border-left: 2.5px solid var(--pugh-primary) !important;
+  border-right: 2.5px solid var(--pugh-primary) !important;
 }
 .pugh-dark .pugh-highlight-header {
   color: #1c1e21 !important;
@@ -325,6 +327,8 @@
 .pugh-winner-header {
   background: linear-gradient(135deg, #d4a017, #f0c53a) !important;
   color: #1c1e21 !important;
+  border-left: 2.5px solid #d4a017 !important;
+  border-right: 2.5px solid #d4a017 !important;
 }
 
 .pugh-winner-cell {

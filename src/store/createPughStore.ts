@@ -73,6 +73,32 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     setEditScore: (editScore: string) => set(() => ({ editScore })),
     setEditLabel: (editLabel: string) => set(() => ({ editLabel })),
     setEditComment: (editComment: string) => set(() => ({ editComment })),
+    addTool: (id: string, label: string) =>
+      set((state) => ({
+        tools: [...state.tools, { id, label }],
+      })),
+    removeTool: (id: string) =>
+      set((state) => ({
+        tools: state.tools.filter((t) => t.id !== id),
+        scores: state.scores.filter((s) => s.toolId !== id),
+      })),
+    addCriterion: (id: string, label: string) =>
+      set((state) => ({
+        criteria: [...state.criteria, { id, label }],
+        weights: { ...state.weights, [id]: 10 },
+      })),
+    removeCriterion: (id: string) =>
+      set((state) => {
+        const newWeights: Record<string, number> = {};
+        for (const [k, v] of Object.entries(state.weights)) {
+          if (k !== id) newWeights[k] = v;
+        }
+        return {
+          criteria: state.criteria.filter((c) => c.id !== id),
+          scores: state.scores.filter((s) => s.criterionId !== id),
+          weights: newWeights,
+        };
+      }),
     renameTool: (id: string, newLabel: string) =>
       set((state) => ({
         tools: state.tools.map((t) =>

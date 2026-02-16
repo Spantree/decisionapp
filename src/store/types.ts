@@ -31,6 +31,10 @@ export interface PughActions {
   setEditComment: (comment: string) => void;
   renameTool: (id: string, newLabel: string) => void;
   renameCriterion: (id: string, newLabel: string) => void;
+  addTool: (id: string, label: string) => void;
+  removeTool: (id: string) => void;
+  addCriterion: (id: string, label: string) => void;
+  removeCriterion: (id: string) => void;
   startEditingHeader: (type: 'tool' | 'criterion', id: string) => void;
   cancelEditingHeader: () => void;
   setEditHeaderValue: (value: string) => void;

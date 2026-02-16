@@ -69,6 +69,10 @@ export default function PughMatrix({
   const setEditComment = usePughStore((s) => s.setEditComment);
   const addScore = usePughStore((s) => s.addScore);
   const toggleTotals = usePughStore((s) => s.toggleTotals);
+  const addTool = usePughStore((s) => s.addTool);
+  const removeTool = usePughStore((s) => s.removeTool);
+  const addCriterion = usePughStore((s) => s.addCriterion);
+  const removeCriterion = usePughStore((s) => s.removeCriterion);
   const editingHeader = usePughStore((s) => s.editingHeader);
   const editHeaderValue = usePughStore((s) => s.editHeaderValue);
   const startEditingHeader = usePughStore((s) => s.startEditingHeader);
@@ -195,6 +199,29 @@ export default function PughMatrix({
     }
   };
 
+  const handleAddTool = () => {
+    const id = `tool-${Date.now()}`;
+    addTool(id, 'New Tool');
+    startEditingHeader('tool', id);
+  };
+
+  const handleAddCriterion = () => {
+    const id = `criterion-${Date.now()}`;
+    addCriterion(id, 'New Criterion');
+    startEditingHeader('criterion', id);
+  };
+
+  const handleDeleteHeader = () => {
+    if (!editingHeader) return;
+    const { type, id } = editingHeader;
+    if (type === 'tool') {
+      removeTool(id);
+    } else {
+      removeCriterion(id);
+    }
+    cancelEditingHeader();
+  };
+
   const isHighlighted = (toolId: string) => highlight && toolId === highlight;
   const isWinner = (toolId: string) => winner && toolId === winner;
   const isEditing = (toolId: string, criterionId: string) =>
@@ -217,7 +244,7 @@ export default function PughMatrix({
                   onClick={() => startEditingHeader('tool', tool.id)}
                 >
                   {isEditingHeaderCell('tool', tool.id) ? (
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div className="pugh-header-edit-row" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="text"
                         aria-label={`Rename tool ${tool.label}`}
@@ -228,12 +255,31 @@ export default function PughMatrix({
                         className="pugh-header-input"
                         autoFocus
                       />
+                      <button
+                        type="button"
+                        className="pugh-header-delete-button"
+                        aria-label={`Delete tool ${tool.label}`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={handleDeleteHeader}
+                      >
+                        🗑
+                      </button>
                     </div>
                   ) : (
                     isWinner(tool.id) ? `👑 ${tool.label}` : tool.label
                   )}
                 </Table.ColumnHeaderCell>
               ))}
+              <Table.ColumnHeaderCell className="pugh-add-cell">
+                <button
+                  type="button"
+                  className="pugh-add-button"
+                  aria-label="Add tool"
+                  onClick={handleAddTool}
+                >
+                  +
+                </button>
+              </Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -244,7 +290,7 @@ export default function PughMatrix({
                   onClick={() => startEditingHeader('criterion', criterion.id)}
                 >
                   {isEditingHeaderCell('criterion', criterion.id) ? (
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div className="pugh-header-edit-row" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="text"
                         aria-label={`Rename criterion ${criterion.label}`}
@@ -255,6 +301,15 @@ export default function PughMatrix({
                         className="pugh-header-input"
                         autoFocus
                       />
+                      <button
+                        type="button"
+                        className="pugh-header-delete-button"
+                        aria-label={`Delete criterion ${criterion.label}`}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={handleDeleteHeader}
+                      >
+                        🗑
+                      </button>
                     </div>
                   ) : (
                     criterion.label
@@ -378,8 +433,21 @@ export default function PughMatrix({
                     </Table.Cell>
                   );
                 })}
+                <Table.Cell />
               </Table.Row>
             ))}
+            <Table.Row>
+              <Table.Cell colSpan={tools.length + 3} className="pugh-add-cell">
+                <button
+                  type="button"
+                  className="pugh-add-button"
+                  aria-label="Add criterion"
+                  onClick={handleAddCriterion}
+                >
+                  +
+                </button>
+              </Table.Cell>
+            </Table.Row>
             {showTotals && (
               <Table.Row className="pugh-total-row">
                 <Table.RowHeaderCell className="pugh-total-label">Weighted Total</Table.RowHeaderCell>
@@ -403,6 +471,7 @@ export default function PughMatrix({
                     </Table.Cell>
                   );
                 })}
+                <Table.Cell />
               </Table.Row>
             )}
           </Table.Body>

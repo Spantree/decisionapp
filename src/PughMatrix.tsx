@@ -368,11 +368,14 @@ export default function PughMatrix({
                           className="pugh-edit-form"
                           onClick={(e) => e.stopPropagation()}
                         >
+                          <span className="pugh-edit-hint">
+                            Score + label together, or comment alone
+                          </span>
                           <input
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9]*"
-                            placeholder="Score 1-10 (optional)"
+                            placeholder="Score 1-10"
                             aria-label={`Score for ${tool.label}, ${criterion.label}`}
                             value={editScore}
                             onChange={(e) => handleEditScoreChange(e.target.value)}
@@ -382,7 +385,7 @@ export default function PughMatrix({
                           />
                           <input
                             type="text"
-                            placeholder="Label (optional)"
+                            placeholder="Label (required with score)"
                             aria-label={`Label for ${tool.label}, ${criterion.label}`}
                             value={editLabel}
                             onChange={(e) => setEditLabel(e.target.value)}

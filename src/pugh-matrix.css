@@ -124,6 +124,13 @@
   padding: 0.25rem;
 }
 
+.pugh-edit-hint {
+  font-size: 0.7rem;
+  color: var(--pugh-text);
+  opacity: 0.6;
+  line-height: 1.2;
+}
+
 .pugh-edit-input {
   width: 100%;
   box-sizing: border-box;

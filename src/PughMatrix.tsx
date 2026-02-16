@@ -1,5 +1,9 @@
 import { useMemo } from 'react';
 import { HoverCard, Table, Theme } from '@radix-ui/themes';
+import {
+  red, tomato, amber, yellow, lime, grass, green,
+  greenDark,
+} from '@radix-ui/colors';
 import type { ScoreEntry } from './types';
 import { usePughStore } from './store/usePughStore';
 import './pugh-matrix.css';
@@ -10,33 +14,41 @@ export interface PughMatrixProps {
   isDark?: boolean;
 }
 
-const scoreColorCache = new Map<string, { bg: string; text: string }>();
+// Light mode: pastel bg (steps 5-6) + dark text (step 11)
+const SCORE_COLORS_LIGHT: Record<number, { bg: string; text: string }> = {
+  1:  { bg: red.red5,       text: red.red11 },
+  2:  { bg: red.red6,       text: red.red11 },
+  3:  { bg: tomato.tomato5, text: tomato.tomato11 },
+  4:  { bg: amber.amber6,   text: amber.amber11 },
+  5:  { bg: yellow.yellow5, text: yellow.yellow11 },
+  6:  { bg: lime.lime5,     text: lime.lime11 },
+  7:  { bg: grass.grass5,   text: grass.grass11 },
+  8:  { bg: grass.grass6,   text: grass.grass11 },
+  9:  { bg: green.green5,   text: green.green11 },
+  10: { bg: green.green6,   text: green.green11 },
+};
+
+// Dark mode: saturated bg (step 9) + light text (steps 1-2 or 12)
+const SCORE_COLORS_DARK: Record<number, { bg: string; text: string }> = {
+  1:  { bg: red.red9,       text: red.red2 },
+  2:  { bg: red.red9,       text: red.red2 },
+  3:  { bg: tomato.tomato9, text: tomato.tomato2 },
+  4:  { bg: amber.amber9,   text: amber.amber12 },
+  5:  { bg: yellow.yellow9, text: yellow.yellow12 },
+  6:  { bg: lime.lime9,     text: lime.lime12 },
+  7:  { bg: grass.grass9,   text: grass.grass2 },
+  8:  { bg: grass.grass9,   text: grass.grass2 },
+  9:  { bg: green.green9,   text: green.green2 },
+  10: { bg: greenDark.green11, text: greenDark.green1 },
+};
 
 function getScoreColor(
   score: number,
   isDark: boolean,
 ): { bg: string; text: string } {
-  const key = `${score}-${isDark}`;
-  const cached = scoreColorCache.get(key);
-  if (cached) return cached;
-
-  const ratio = Math.max(0, Math.min(1, (score - 1) / 9));
-  const midpoint = 0.5;
-  const distance = Math.abs(ratio - midpoint) / midpoint;
-  const hue = ratio * 120;
-  const saturation = distance * distance;
-
-  const result = isDark
-    ? {
-        bg: `hsl(${hue}, ${saturation * 55 + 5}%, ${18 + distance * 8}%)`,
-        text: `hsl(${hue}, ${saturation * 50 + 10}%, ${72 + distance * 10}%)`,
-      }
-    : {
-        bg: `hsl(${hue}, ${saturation * 80 + 5}%, ${93 - distance * 10}%)`,
-        text: `hsl(${hue}, ${saturation * 85 + 5}%, ${38 - distance * 16}%)`,
-      };
-  scoreColorCache.set(key, result);
-  return result;
+  const clamped = Math.max(1, Math.min(10, Math.round(score)));
+  const palette = isDark ? SCORE_COLORS_DARK : SCORE_COLORS_LIGHT;
+  return palette[clamped];
 }
 
 function formatDate(timestamp: number): string {
@@ -342,12 +354,15 @@ export default function PughMatrix({
                     <Table.Cell
                       key={tool.id}
                       className={`pugh-score-cell pugh-score-cell-editable${isWinner(tool.id) ? ' pugh-winner-cell' : isHighlighted(tool.id) ? ' pugh-highlight-cell' : ''}`}
-                      style={{
-                        backgroundColor: colors.bg,
-                        color: colors.text,
-                      }}
                       onClick={() => startEditing(tool.id, criterion.id)}
                     >
+                      <div
+                        className="pugh-score-fill"
+                        style={{
+                          backgroundColor: colors.bg,
+                          color: colors.text,
+                        }}
+                      >
                       {editing ? (
                         <div
                           className="pugh-edit-form"
@@ -430,6 +445,7 @@ export default function PughMatrix({
                           </HoverCard.Content>
                         </HoverCard.Root>
                       ) : null}
+                      </div>
                     </Table.Cell>
                   );
                 })}
@@ -462,12 +478,16 @@ export default function PughMatrix({
                     <Table.Cell
                       key={tool.id}
                       className={`pugh-total-cell${isWinner(tool.id) ? ' pugh-winner-cell' : isHighlighted(tool.id) ? ' pugh-highlight-cell' : ''}`}
-                      style={{
-                        backgroundColor: colors.bg,
-                        color: colors.text,
-                      }}
                     >
-                      {total}
+                      <div
+                        className="pugh-score-fill"
+                        style={{
+                          backgroundColor: colors.bg,
+                          color: colors.text,
+                        }}
+                      >
+                        {total}
+                      </div>
                     </Table.Cell>
                   );
                 })}

@@ -44,6 +44,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     scores,
     weights: initialWeights,
     showTotals: false,
+    showWeights: false,
     editingCell: null,
     editScore: '',
     editLabel: '',
@@ -60,6 +61,8 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       })),
     setShowTotals: (show: boolean) => set(() => ({ showTotals: show })),
     toggleTotals: () => set((state) => ({ showTotals: !state.showTotals })),
+    setShowWeights: (show: boolean) => set(() => ({ showWeights: show })),
+    toggleWeights: () => set((state) => ({ showWeights: !state.showWeights })),
     startEditing: (toolId: string, criterionId: string) =>
       set(() => ({
         editingCell: { toolId, criterionId },

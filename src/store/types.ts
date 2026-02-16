@@ -9,6 +9,7 @@ export interface PughDomainState {
 
 export interface PughUIState {
   showTotals: boolean;
+  showWeights: boolean;
   editingCell: { toolId: string; criterionId: string } | null;
   editScore: string;
   editLabel: string;
@@ -24,6 +25,8 @@ export interface PughActions {
   setWeight: (criterionId: string, weight: number) => void;
   setShowTotals: (show: boolean) => void;
   toggleTotals: () => void;
+  setShowWeights: (show: boolean) => void;
+  toggleWeights: () => void;
   startEditing: (toolId: string, criterionId: string) => void;
   cancelEditing: () => void;
   setEditScore: (score: string) => void;

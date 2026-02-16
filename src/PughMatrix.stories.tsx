@@ -109,11 +109,13 @@ function StoryMatrix({
   highlight,
   showWinner,
   isDark,
+  readOnly,
 }: {
   scores?: ScoreEntry[];
   highlight?: string;
   showWinner?: boolean;
   isDark?: boolean;
+  readOnly?: boolean;
 }) {
   const store = useMemo(
     () => createPughStore({ criteria, tools, scores: storyScores }),
@@ -121,7 +123,7 @@ function StoryMatrix({
   );
   return (
     <PughStoreProvider store={store}>
-      <PughMatrix highlight={highlight} showWinner={showWinner} isDark={isDark} />
+      <PughMatrix highlight={highlight} showWinner={showWinner} isDark={isDark} readOnly={readOnly} />
     </PughStoreProvider>
   );
 }
@@ -142,6 +144,10 @@ const meta: Meta<typeof StoryMatrix> = {
     isDark: {
       control: 'boolean',
       description: 'Enable dark mode styling',
+    },
+    readOnly: {
+      control: 'boolean',
+      description: 'Disable all editing interactions',
     },
   },
 };
@@ -233,6 +239,13 @@ export const WithScoreHistory: Story = {
 export const WithDialog: Story = {
   args: {
     scores: scoresWithDialog,
+  },
+};
+
+/** Read-only mode — no editing, no add/remove buttons, no toggle controls. */
+export const ReadOnly: Story = {
+  args: {
+    readOnly: true,
   },
 };
 

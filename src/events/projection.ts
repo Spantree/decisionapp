@@ -1,5 +1,6 @@
 import type { PughDomainState } from '../store/types';
 import type { PughEvent } from './types';
+import { DEFAULT_SCALE } from '../types';
 
 export function projectEvents(events: PughEvent[]): PughDomainState {
   const criteria: PughDomainState['criteria'] = [];
@@ -10,7 +11,12 @@ export function projectEvents(events: PughEvent[]): PughDomainState {
   for (const event of events) {
     switch (event.type) {
       case 'CriterionAdded':
-        criteria.push({ id: event.criterionId, label: event.label, user: event.user });
+        criteria.push({
+          id: event.criterionId,
+          label: event.label,
+          user: event.user,
+          scoreScale: event.scoreScale ?? DEFAULT_SCALE,
+        });
         weights[event.criterionId] = 10;
         break;
 
@@ -18,6 +24,15 @@ export function projectEvents(events: PughEvent[]): PughDomainState {
         for (let i = 0; i < criteria.length; i++) {
           if (criteria[i].id === event.criterionId) {
             criteria[i] = { ...criteria[i], label: event.newLabel };
+            break;
+          }
+        }
+        break;
+
+      case 'CriterionScaleChanged':
+        for (let i = 0; i < criteria.length; i++) {
+          if (criteria[i].id === event.criterionId) {
+            criteria[i] = { ...criteria[i], scoreScale: event.scoreScale };
             break;
           }
         }

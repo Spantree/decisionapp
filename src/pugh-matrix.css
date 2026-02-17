@@ -266,6 +266,29 @@
   color: #fff;
 }
 
+/* Criterion header edit column (vertical layout with selects) */
+.pugh-header-edit-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.pugh-header-select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.2rem 0.3rem;
+  font-size: inherit;
+  border: 1px solid var(--pugh-border-color);
+  border-radius: 4px;
+  background: var(--pugh-bg);
+  color: var(--pugh-text);
+}
+
+.pugh-header-select:focus {
+  outline: 2px solid var(--pugh-primary);
+  outline-offset: -1px;
+}
+
 /* Header edit row (input + trash) */
 .pugh-header-edit-row {
   display: flex;

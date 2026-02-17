@@ -5,6 +5,7 @@ import {
   greenDark,
 } from '@radix-ui/colors';
 import type { ScoreEntry } from './types';
+import { SCORE_RANGES, LABEL_SETS, labelSetsForRange } from './types';
 import { usePughStore } from './store/usePughStore';
 import { scoreId, toolId, criterionId } from './ids';
 import './pugh-matrix.css';
@@ -16,41 +17,44 @@ export interface PughMatrixProps {
   readOnly?: boolean;
 }
 
-// Light mode: pastel bg (steps 5-6) + dark text (step 11)
-const SCORE_COLORS_LIGHT: Record<number, { bg: string; text: string }> = {
-  1:  { bg: red.red5,       text: red.red11 },
-  2:  { bg: red.red6,       text: red.red11 },
-  3:  { bg: tomato.tomato5, text: tomato.tomato11 },
-  4:  { bg: amber.amber6,   text: amber.amber11 },
-  5:  { bg: yellow.yellow5, text: yellow.yellow11 },
-  6:  { bg: lime.lime5,     text: lime.lime12 },
-  7:  { bg: grass.grass5,   text: grass.grass12 },
-  8:  { bg: grass.grass6,   text: grass.grass12 },
-  9:  { bg: green.green5,   text: green.green12 },
-  10: { bg: green.green6,   text: green.green12 },
-};
+const GRADIENT_LIGHT = [
+  { bg: red.red5,       text: red.red11 },
+  { bg: red.red6,       text: red.red11 },
+  { bg: tomato.tomato5, text: tomato.tomato11 },
+  { bg: amber.amber6,   text: amber.amber11 },
+  { bg: yellow.yellow5, text: yellow.yellow11 },
+  { bg: lime.lime5,     text: lime.lime12 },
+  { bg: grass.grass5,   text: grass.grass12 },
+  { bg: grass.grass6,   text: grass.grass12 },
+  { bg: green.green5,   text: green.green12 },
+  { bg: green.green6,   text: green.green12 },
+];
 
-// Dark mode: saturated bg (step 9) + light text (steps 1-2 or 12)
-const SCORE_COLORS_DARK: Record<number, { bg: string; text: string }> = {
-  1:  { bg: red.red9,       text: red.red2 },
-  2:  { bg: red.red9,       text: red.red2 },
-  3:  { bg: tomato.tomato9, text: tomato.tomato2 },
-  4:  { bg: amber.amber9,   text: amber.amber12 },
-  5:  { bg: yellow.yellow9, text: yellow.yellow12 },
-  6:  { bg: lime.lime9,     text: lime.lime12 },
-  7:  { bg: grass.grass9,   text: grass.grass2 },
-  8:  { bg: grass.grass9,   text: grass.grass2 },
-  9:  { bg: green.green9,   text: green.green2 },
-  10: { bg: greenDark.green11, text: greenDark.green1 },
-};
+const GRADIENT_DARK = [
+  { bg: red.red9,       text: red.red2 },
+  { bg: red.red9,       text: red.red2 },
+  { bg: tomato.tomato9, text: tomato.tomato2 },
+  { bg: amber.amber9,   text: amber.amber12 },
+  { bg: yellow.yellow9, text: yellow.yellow12 },
+  { bg: lime.lime9,     text: lime.lime12 },
+  { bg: grass.grass9,   text: grass.grass2 },
+  { bg: grass.grass9,   text: grass.grass2 },
+  { bg: green.green9,   text: green.green2 },
+  { bg: greenDark.green11, text: greenDark.green1 },
+];
 
 function getScoreColor(
   score: number,
+  min: number,
+  max: number,
   isDark: boolean,
 ): { bg: string; text: string } {
-  const clamped = Math.max(1, Math.min(10, Math.round(score)));
-  const palette = isDark ? SCORE_COLORS_DARK : SCORE_COLORS_LIGHT;
-  return palette[clamped];
+  const gradient = isDark ? GRADIENT_DARK : GRADIENT_LIGHT;
+  if (min === max) return gradient[Math.floor(gradient.length / 2)];
+  const normalized = (score - min) / (max - min);
+  const clamped = Math.max(0, Math.min(1, normalized));
+  const index = Math.round(clamped * (gradient.length - 1));
+  return gradient[index];
 }
 
 function formatDate(timestamp: number): string {
@@ -96,6 +100,11 @@ export default function PughMatrix({
   const cancelEditingHeader = usePughStore((s) => s.cancelEditingHeader);
   const setEditHeaderValue = usePughStore((s) => s.setEditHeaderValue);
   const saveHeaderEdit = usePughStore((s) => s.saveHeaderEdit);
+  const editHeaderRangeId = usePughStore((s) => s.editHeaderRangeId);
+  const editHeaderLabelSetId = usePughStore((s) => s.editHeaderLabelSetId);
+  const setEditHeaderRangeId = usePughStore((s) => s.setEditHeaderRangeId);
+  const setEditHeaderLabelSetId = usePughStore((s) => s.setEditHeaderLabelSetId);
+  const setCriterionScale = usePughStore((s) => s.setCriterionScale);
 
   const { latestByCell, historyByCell, weightedTotals, maxTotal, winner } =
     useMemo(() => {
@@ -137,9 +146,11 @@ export default function PughMatrix({
           const entry = latest.get(key);
           const score = entry?.score ?? 0;
           const weight = weights[criterion.id] ?? 10;
-          total += score * weight;
+          const { min: sMin, max: sMax } = criterion.scoreScale;
+          const normalized = sMax !== sMin ? (score - sMin) / (sMax - sMin) : 0.5;
+          total += normalized * weight;
         }
-        const rounded = Math.round(total * 10) / 10;
+        const rounded = Math.round(total);
         totals[tool.id] = rounded;
         if (rounded > max) {
           max = rounded;
@@ -167,24 +178,28 @@ export default function PughMatrix({
     }
   };
 
+  const editingCriterion = editingCell
+    ? criteria.find((c) => c.id === editingCell.criterionId)
+    : null;
+  const editingScale = editingCriterion?.scoreScale;
+
   const handleEditScoreChange = (value: string) => {
-    if (value === '') {
-      setEditScore('');
+    if (value === '' || value === '-') {
+      setEditScore(value);
       return;
     }
     const num = Math.round(Number(value));
-    if (!isNaN(num) && num >= 1 && num <= 10) {
+    if (!isNaN(num) && editingScale && num >= editingScale.min && num <= editingScale.max) {
       setEditScore(String(num));
     }
   };
 
   const handleEditSave = () => {
-    if (!editingCell) return;
-    const scoreNum = editScore ? Number(editScore) : undefined;
-    if (scoreNum != null && (isNaN(scoreNum) || scoreNum < 1 || scoreNum > 10)) return;
+    if (!editingCell || !editingScale) return;
+    const scoreNum = editScore && editScore !== '-' ? Number(editScore) : undefined;
+    if (scoreNum != null && (isNaN(scoreNum) || scoreNum < editingScale.min || scoreNum > editingScale.max)) return;
     const trimmedLabel = editLabel.trim() || undefined;
     const trimmedComment = editComment.trim() || undefined;
-    if (scoreNum != null && !trimmedLabel) return;
     if (scoreNum == null && !trimmedComment) return;
     addScore({
       id: scoreId(),
@@ -214,6 +229,58 @@ export default function PughMatrix({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       saveHeaderEdit();
+    }
+  };
+
+  const handleRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!editingHeader || editingHeader.type !== 'criterion') return;
+    const critId = editingHeader.id;
+    const criterion = criteria.find((c) => c.id === critId);
+    if (!criterion) return;
+    const oldScale = criterion.scoreScale;
+    const newRangeId = e.target.value;
+    setEditHeaderRangeId(newRangeId);
+    const availableSets = labelSetsForRange(newRangeId);
+    const firstSet = availableSets[0];
+    if (firstSet) {
+      setEditHeaderLabelSetId(firstSet.id);
+      const range = SCORE_RANGES.find((r) => r.id === newRangeId)!;
+      setCriterionScale(critId, { min: range.min, max: range.max, labels: firstSet.labels });
+      // Rescale existing scores from old range to new range
+      if (oldScale.min !== range.min || oldScale.max !== range.max) {
+        const oldSpan = oldScale.max - oldScale.min;
+        const newSpan = range.max - range.min;
+        for (const tool of tools) {
+          const cellKey = `${tool.id}\0${critId}`;
+          const entry = latestByCell.get(cellKey);
+          if (entry?.score != null && oldSpan > 0) {
+            const normalized = (entry.score - oldScale.min) / oldSpan;
+            const rescaled = Math.round(range.min + normalized * newSpan);
+            const clamped = Math.max(range.min, Math.min(range.max, rescaled));
+            addScore({
+              id: scoreId(),
+              toolId: tool.id,
+              criterionId: critId,
+              score: clamped,
+              label: undefined,
+              comment: undefined,
+              timestamp: Date.now(),
+              user: 'anonymous',
+            });
+          }
+        }
+      }
+    }
+  };
+
+  const handleLabelSetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!editingHeader || editingHeader.type !== 'criterion') return;
+    const newLabelSetId = e.target.value;
+    setEditHeaderLabelSetId(newLabelSetId);
+    const ls = LABEL_SETS.find((l) => l.id === newLabelSetId);
+    if (ls) {
+      const range = SCORE_RANGES.find((r) => r.id === editHeaderRangeId)!;
+      setCriterionScale(editingHeader.id, { min: range.min, max: range.max, labels: ls.labels });
     }
   };
 
@@ -312,26 +379,51 @@ export default function PughMatrix({
                   onClick={readOnly ? undefined : () => startEditingHeader('criterion', criterion.id)}
                 >
                   {isEditingHeaderCell('criterion', criterion.id) ? (
-                    <div className="pugh-header-edit-row" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="text"
-                        aria-label={`Rename criterion ${criterion.label}`}
-                        value={editHeaderValue}
-                        onChange={(e) => setEditHeaderValue(e.target.value)}
-                        onKeyDown={handleHeaderKeyDown}
-                        onBlur={saveHeaderEdit}
-                        className="pugh-header-input"
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        className="pugh-header-delete-button"
-                        aria-label={`Delete criterion ${criterion.label}`}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={handleDeleteHeader}
+                    <div className="pugh-header-edit-col" onClick={(e) => e.stopPropagation()}>
+                      <div className="pugh-header-edit-row">
+                        <input
+                          type="text"
+                          aria-label={`Rename criterion ${criterion.label}`}
+                          value={editHeaderValue}
+                          onChange={(e) => setEditHeaderValue(e.target.value)}
+                          onKeyDown={handleHeaderKeyDown}
+                          className="pugh-header-input"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="pugh-header-delete-button"
+                          aria-label={`Delete criterion ${criterion.label}`}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={handleDeleteHeader}
+                        >
+                          🗑
+                        </button>
+                      </div>
+                      <select
+                        aria-label={`Score range for ${criterion.label}`}
+                        className="pugh-header-select"
+                        value={editHeaderRangeId}
+                        onChange={handleRangeChange}
                       >
-                        🗑
-                      </button>
+                        {SCORE_RANGES.map((r) => (
+                          <option key={r.id} value={r.id}>{r.name}</option>
+                        ))}
+                      </select>
+                      <select
+                        aria-label={`Label set for ${criterion.label}`}
+                        className="pugh-header-select"
+                        value={editHeaderLabelSetId}
+                        onChange={handleLabelSetChange}
+                      >
+                        {labelSetsForRange(editHeaderRangeId).map((ls) => (
+                          <option key={ls.id} value={ls.id}>{ls.name}</option>
+                        ))}
+                      </select>
+                      <div className="pugh-edit-actions">
+                        <button type="button" onClick={saveHeaderEdit}>Save</button>
+                        <button type="button" onClick={cancelEditingHeader}>Cancel</button>
+                      </div>
                     </div>
                   ) : (
                     criterion.label
@@ -355,10 +447,12 @@ export default function PughMatrix({
                   const cellKey = `${tool.id}\0${criterion.id}`;
                   const entry = latestByCell.get(cellKey);
                   const score = entry?.score;
-                  const label = entry?.label;
                   const hasScore = score != null;
+                  const displayLabel = hasScore
+                    ? (entry?.label || criterion.scoreScale.labels[score])
+                    : undefined;
                   const colors = hasScore
-                    ? getScoreColor(score, isDark)
+                    ? getScoreColor(score, criterion.scoreScale.min, criterion.scoreScale.max, isDark)
                     : { bg: 'transparent', text: 'inherit' };
                   const history = historyByCell.get(cellKey);
                   const editing = isEditing(tool.id, criterion.id);
@@ -382,13 +476,12 @@ export default function PughMatrix({
                           onClick={(e) => e.stopPropagation()}
                         >
                           <span className="pugh-edit-hint">
-                            Score + label together, or comment alone
+                            Enter a score or comment
                           </span>
                           <input
                             type="text"
                             inputMode="numeric"
-                            pattern="[0-9]*"
-                            placeholder="Score 1-10"
+                            placeholder={editingScale ? `Score ${editingScale.min} to ${editingScale.max}` : 'Score'}
                             aria-label={`Score for ${tool.label}, ${criterion.label}`}
                             value={editScore}
                             onChange={(e) => handleEditScoreChange(e.target.value)}
@@ -396,9 +489,16 @@ export default function PughMatrix({
                             className="pugh-edit-input"
                             autoFocus
                           />
+                          {editScore && editScore !== '-' && editingScale?.labels[Number(editScore)] && (
+                            <span className="pugh-edit-hint">
+                              = {editingScale.labels[Number(editScore)]}
+                            </span>
+                          )}
                           <input
                             type="text"
-                            placeholder="Label (required with score)"
+                            placeholder={editScore && editScore !== '-' && editingScale?.labels[Number(editScore)]
+                              ? `Label (default: ${editingScale.labels[Number(editScore)]})`
+                              : 'Label (optional)'}
                             aria-label={`Label for ${tool.label}, ${criterion.label}`}
                             value={editLabel}
                             onChange={(e) => setEditLabel(e.target.value)}
@@ -431,8 +531,8 @@ export default function PughMatrix({
                               {hasScore ? (
                                 <>
                                   <span className="pugh-score-number">{score}</span>
-                                  {label ? (
-                                    <span className="pugh-score-label">{label}</span>
+                                  {displayLabel ? (
+                                    <span className="pugh-score-label">{displayLabel}</span>
                                   ) : null}
                                 </>
                               ) : (
@@ -441,11 +541,15 @@ export default function PughMatrix({
                             </span>
                           </HoverCard.Trigger>
                           <HoverCard.Content size="1" maxWidth="280px">
-                            {history.map((h) => (
+                            {history.map((h) => {
+                              const hLabel = h.score != null
+                                ? (h.label || criterion.scoreScale.labels[h.score])
+                                : undefined;
+                              return (
                               <div key={h.id} className="pugh-history-entry">
                                 {h.score != null ? (
                                   <div className="pugh-history-score">
-                                    {h.score}{h.label ? ` — ${h.label}` : ''}
+                                    {h.score}{hLabel ? ` — ${hLabel}` : ''}
                                   </div>
                                 ) : null}
                                 {h.comment ? (
@@ -457,7 +561,8 @@ export default function PughMatrix({
                                   {formatDate(h.timestamp)}
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </HoverCard.Content>
                         </HoverCard.Root>
                       ) : null}
@@ -474,10 +579,9 @@ export default function PughMatrix({
                 {showWeights && <Table.Cell className="pugh-weight-cell" />}
                 {tools.map((tool) => {
                   const total = weightedTotals[tool.id];
-                  const colors = getScoreColor(
-                    (total / maxTotal) * 10,
-                    isDark,
-                  );
+                  const colors = maxTotal > 0
+                    ? getScoreColor(total, 0, maxTotal, isDark)
+                    : { bg: 'transparent', text: 'inherit' };
                   return (
                     <Table.Cell
                       key={tool.id}

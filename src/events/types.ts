@@ -1,3 +1,5 @@
+import type { ScoreScale } from '../types';
+
 interface PughEventBase {
   id: string;
   timestamp: number;
@@ -8,6 +10,7 @@ export interface CriterionAdded extends PughEventBase {
   type: 'CriterionAdded';
   criterionId: string;
   label: string;
+  scoreScale?: ScoreScale;
 }
 
 export interface CriterionRenamed extends PughEventBase {
@@ -19,6 +22,12 @@ export interface CriterionRenamed extends PughEventBase {
 export interface CriterionRemoved extends PughEventBase {
   type: 'CriterionRemoved';
   criterionId: string;
+}
+
+export interface CriterionScaleChanged extends PughEventBase {
+  type: 'CriterionScaleChanged';
+  criterionId: string;
+  scoreScale: ScoreScale;
 }
 
 export interface ToolAdded extends PughEventBase {
@@ -43,6 +52,7 @@ export interface ScoreSet extends PughEventBase {
   toolId: string;
   criterionId: string;
   score?: number;
+  /** Overrides the criterion's default label for this score value */
   label?: string;
   comment?: string;
 }
@@ -57,6 +67,7 @@ export type PughEvent =
   | CriterionAdded
   | CriterionRenamed
   | CriterionRemoved
+  | CriterionScaleChanged
   | ToolAdded
   | ToolRenamed
   | ToolRemoved

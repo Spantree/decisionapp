@@ -6,12 +6,13 @@ import { createPughStore } from './store/createPughStore';
 import { createLocalStoragePersister } from './persist/localStoragePersister';
 import { PughStoreProvider } from './store/PughStoreProvider';
 import { scoreId, toolId as makeToolId, MAIN_BRANCH_ID } from './ids';
+import { SCALE_1_10 } from './types';
 import './pugh-matrix.css';
 
 const criteria = [
-  { id: 'cost', label: 'Cost', user: 'alice' },
-  { id: 'performance', label: 'Performance', user: 'alice' },
-  { id: 'ease-of-use', label: 'Ease of Use', user: 'alice' },
+  { id: 'cost', label: 'Cost', user: 'alice', scoreScale: SCALE_1_10 },
+  { id: 'performance', label: 'Performance', user: 'alice', scoreScale: SCALE_1_10 },
+  { id: 'ease-of-use', label: 'Ease of Use', user: 'alice', scoreScale: SCALE_1_10 },
 ];
 const tools = [
   { id: 'react', label: 'React', user: 'alice' },

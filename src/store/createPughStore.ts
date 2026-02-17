@@ -1,6 +1,7 @@
 import { createStore, type StateCreator } from 'zustand/vanilla';
 import { devtools, persist, createJSONStorage } from 'zustand/middleware';
-import type { Criterion, Tool, ScoreEntry } from '../types';
+import type { Criterion, Tool, ScoreEntry, ScoreScale } from '../types';
+import { DEFAULT_SCALE, RANGE_1_10, LABELS_QUALITY_1_10, findRange, findLabelSet, labelSetsForRange } from '../types';
 import type { Persister } from '../persist/types';
 import type { PughStore, PughDomainState } from './types';
 import type { PughEvent, Branch } from '../events/types';
@@ -143,6 +144,8 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     editComment: '',
     editingHeader: null,
     editHeaderValue: '',
+    editHeaderRangeId: RANGE_1_10.id,
+    editHeaderLabelSetId: LABELS_QUALITY_1_10.id,
 
     // Domain actions (thin wrappers around dispatch)
     addScore: (entry: ScoreEntry) => {
@@ -171,11 +174,15 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     },
 
     addCriterion: (id: string, label: string) => {
-      get().dispatch(makeEvent('CriterionAdded', { criterionId: id, label }));
+      get().dispatch(makeEvent('CriterionAdded', { criterionId: id, label, scoreScale: DEFAULT_SCALE }));
     },
 
     removeCriterion: (id: string) => {
       get().dispatch(makeEvent('CriterionRemoved', { criterionId: id }));
+    },
+
+    setCriterionScale: (id: string, scale: ScoreScale) => {
+      get().dispatch(makeEvent('CriterionScaleChanged', { criterionId: id, scoreScale: scale }));
     },
 
     renameTool: (id: string, newLabel: string) => {
@@ -206,13 +213,37 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       set((state) => {
         const items = type === 'tool' ? state.tools : state.criteria;
         const item = items.find((i) => i.id === id);
+        let rangeId = RANGE_1_10.id;
+        let labelSetId = LABELS_QUALITY_1_10.id;
+        if (type === 'criterion') {
+          const criterion = state.criteria.find((c) => c.id === id);
+          if (criterion) {
+            const range = findRange(criterion.scoreScale);
+            if (range) rangeId = range.id;
+            const ls = findLabelSet(criterion.scoreScale);
+            if (ls) labelSetId = ls.id;
+            else {
+              const fallback = labelSetsForRange(rangeId);
+              if (fallback.length > 0) labelSetId = fallback[0].id;
+            }
+          }
+        }
         return {
           editingHeader: { type, id },
           editHeaderValue: item?.label ?? '',
+          editHeaderRangeId: rangeId,
+          editHeaderLabelSetId: labelSetId,
         };
       }, false, { type: 'startEditingHeader', headerType: type, id }),
-    cancelEditingHeader: () => set(() => ({ editingHeader: null, editHeaderValue: '' }), false, 'cancelEditingHeader'),
+    cancelEditingHeader: () => set(() => ({
+      editingHeader: null,
+      editHeaderValue: '',
+      editHeaderRangeId: RANGE_1_10.id,
+      editHeaderLabelSetId: LABELS_QUALITY_1_10.id,
+    }), false, 'cancelEditingHeader'),
     setEditHeaderValue: (editHeaderValue: string) => set(() => ({ editHeaderValue }), false, { type: 'setEditHeaderValue', editHeaderValue }),
+    setEditHeaderRangeId: (editHeaderRangeId: string) => set(() => ({ editHeaderRangeId }), false, { type: 'setEditHeaderRangeId', editHeaderRangeId }),
+    setEditHeaderLabelSetId: (editHeaderLabelSetId: string) => set(() => ({ editHeaderLabelSetId }), false, { type: 'setEditHeaderLabelSetId', editHeaderLabelSetId }),
     saveHeaderEdit: () => {
       const state = get();
       if (!state.editingHeader) return;
@@ -238,7 +269,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     devtools(
       persist(storeCreator, {
         name: persistKey,
-        version: 2,
+        version: 3,
         storage: createPughStorageAdapter(persister),
         partialize: (state) =>
           ({

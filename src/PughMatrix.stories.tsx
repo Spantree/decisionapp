@@ -8,13 +8,21 @@ import { createLocalStoragePersister } from './persist/localStoragePersister';
 import { scoreId } from './ids';
 import './pugh-matrix.css';
 import type { Criterion, Tool, ScoreEntry } from './types';
+import {
+  SCALE_1_10, SCALE_NEG2_POS2,
+  LABELS_COST_1_10, LABELS_EASE_1_10, LABELS_COMMUNITY_1_10,
+} from './types';
+
+const costScale = { min: 1, max: 10, labels: LABELS_COST_1_10.labels };
+const easeScale = { min: 1, max: 10, labels: LABELS_EASE_1_10.labels };
+const communityScale = { min: 1, max: 10, labels: LABELS_COMMUNITY_1_10.labels };
 
 const criteria: Criterion[] = [
-  { id: 'cost', label: 'Cost', user: 'alice' },
-  { id: 'performance', label: 'Performance', user: 'alice' },
-  { id: 'ease-of-use', label: 'Ease of Use', user: 'alice' },
-  { id: 'community', label: 'Community Support', user: 'alice' },
-  { id: 'docs', label: 'Documentation', user: 'alice' },
+  { id: 'cost', label: 'Cost', user: 'alice', scoreScale: costScale },
+  { id: 'performance', label: 'Performance', user: 'alice', scoreScale: SCALE_1_10 },
+  { id: 'ease-of-use', label: 'Ease of Use', user: 'alice', scoreScale: easeScale },
+  { id: 'community', label: 'Community Support', user: 'alice', scoreScale: communityScale },
+  { id: 'docs', label: 'Documentation', user: 'alice', scoreScale: SCALE_1_10 },
 ];
 const tools: Tool[] = [
   { id: 'react', label: 'React', user: 'alice' },
@@ -30,8 +38,8 @@ function entry(
   toolId: string,
   criterionId: string,
   score: number,
-  label: string,
   timestamp: number,
+  labelOrComment?: string,
   comment?: string,
 ): ScoreEntry {
   return {
@@ -39,7 +47,7 @@ function entry(
     toolId,
     criterionId,
     score,
-    label,
+    label: labelOrComment,
     comment,
     timestamp,
     user: 'alice',
@@ -67,37 +75,41 @@ const t2 = 1707686400000; // Feb 12, 2024
 const t3 = 1707772800000; // Feb 13, 2024
 
 const scores: ScoreEntry[] = [
-  entry(reactTool.id, costCri.id, 9, 'Free', t1),
-  entry(reactTool.id, perfCri.id, 7, 'Good', t1),
-  entry(reactTool.id, eouCri.id, 6, 'Moderate', t1),
-  entry(reactTool.id, commCri.id, 10, 'Massive', t1),
-  entry(reactTool.id, docsCri.id, 8, 'Extensive', t1),
+  // React — all from label sets
+  entry(reactTool.id, costCri.id, 10, t1),              // Cost: "Free"
+  entry(reactTool.id, perfCri.id, 7, t1),               // Quality: "Good"
+  entry(reactTool.id, eouCri.id, 6, t1),                // Ease: "Manageable"
+  entry(reactTool.id, commCri.id, 10, t1),              // Community: "Massive"
+  entry(reactTool.id, docsCri.id, 8, t1),               // Quality: "Very Good"
 
-  entry(vueTool.id, costCri.id, 9, 'Free', t1),
-  entry(vueTool.id, perfCri.id, 8, 'Great', t1),
-  entry(vueTool.id, eouCri.id, 9, 'Easy', t1),
-  entry(vueTool.id, commCri.id, 7, 'Strong', t1),
-  entry(vueTool.id, docsCri.id, 9, 'Excellent', t1),
+  // Vue — all from label sets
+  entry(vueTool.id, costCri.id, 10, t1),                // Cost: "Free"
+  entry(vueTool.id, perfCri.id, 8, t1),                 // Quality: "Very Good"
+  entry(vueTool.id, eouCri.id, 9, t1),                  // Ease: "Intuitive"
+  entry(vueTool.id, commCri.id, 7, t1),                 // Community: "Strong"
+  entry(vueTool.id, docsCri.id, 9, t1),                 // Quality: "Excellent"
 
-  entry(svelteTool.id, costCri.id, 9, 'Free', t1),
-  entry(svelteTool.id, perfCri.id, 10, 'Fastest', t1),
-  entry(svelteTool.id, eouCri.id, 8, 'Simple', t1),
-  entry(svelteTool.id, commCri.id, 5, 'Growing', t1),
-  entry(svelteTool.id, docsCri.id, 7, 'Good', t1),
+  // Svelte — one override on performance
+  entry(svelteTool.id, costCri.id, 10, t1),             // Cost: "Free"
+  entry(svelteTool.id, perfCri.id, 10, t1, 'Fastest'),  // override: "Fastest" instead of "Outstanding"
+  entry(svelteTool.id, eouCri.id, 8, t1),               // Ease: "Very Easy"
+  entry(svelteTool.id, commCri.id, 5, t1),              // Community: "Moderate"
+  entry(svelteTool.id, docsCri.id, 7, t1),              // Quality: "Good"
 
-  entry(angularTool.id, costCri.id, 9, 'Free', t1),
-  entry(angularTool.id, perfCri.id, 6, 'Decent', t1),
-  entry(angularTool.id, eouCri.id, 4, 'Complex', t1),
-  entry(angularTool.id, commCri.id, 8, 'Large', t1),
-  entry(angularTool.id, docsCri.id, 8, 'Thorough', t1),
+  // Angular — one override on ease-of-use
+  entry(angularTool.id, costCri.id, 8, t1),             // Cost: "Very Cheap"
+  entry(angularTool.id, perfCri.id, 6, t1),             // Quality: "Above Avg"
+  entry(angularTool.id, eouCri.id, 4, t1, 'Steep learning curve'),  // override
+  entry(angularTool.id, commCri.id, 8, t1),             // Community: "Very Strong"
+  entry(angularTool.id, docsCri.id, 8, t1),             // Quality: "Very Good"
 ];
 
 // Scores with history: some cells have revised entries
 const scoresWithHistory: ScoreEntry[] = [
   ...scores,
-  entry(reactTool.id, costCri.id, 7, 'Revised', t2, 'Hidden infra costs'),
-  entry(reactTool.id, perfCri.id, 8, 'Improved', t2, 'After React 19 release'),
-  entry(svelteTool.id, commCri.id, 7, 'Growing Fast', t2, 'SvelteKit adoption boosted ecosystem'),
+  entry(reactTool.id, costCri.id, 7, t2, undefined, 'Hidden infra costs'),    // Cost: "Cheap" — downgraded from Free
+  entry(reactTool.id, perfCri.id, 8, t2, undefined, 'After React 19 release'), // Quality: "Very Good" from label set
+  entry(svelteTool.id, commCri.id, 7, t2, 'Growing Fast', 'SvelteKit adoption boosted ecosystem'),  // override
 ];
 
 // Scores with dialog: comment-only follow-ups that don't overwrite scores
@@ -251,6 +263,46 @@ export const WithDialog: Story = {
 export const ReadOnly: Story = {
   args: {
     readOnly: true,
+  },
+};
+
+/* ------------------------------------------------------------------ */
+/*  -2 to +2 scale story                                              */
+/* ------------------------------------------------------------------ */
+
+const criteriaNeg2: Criterion[] = [
+  { id: 'cost', label: 'Cost', user: 'alice', scoreScale: SCALE_NEG2_POS2 },
+  { id: 'performance', label: 'Performance', user: 'alice', scoreScale: SCALE_NEG2_POS2 },
+  { id: 'ease-of-use', label: 'Ease of Use', user: 'alice', scoreScale: SCALE_NEG2_POS2 },
+];
+
+const scoresNeg2: ScoreEntry[] = [
+  entry(reactTool.id, 'cost', 2, t1),
+  entry(reactTool.id, 'performance', 1, t1),
+  entry(reactTool.id, 'ease-of-use', 0, t1),
+  entry(vueTool.id, 'cost', 1, t1),
+  entry(vueTool.id, 'performance', 2, t1),
+  entry(vueTool.id, 'ease-of-use', 1, t1),
+  entry(svelteTool.id, 'cost', -1, t1),
+  entry(svelteTool.id, 'performance', 2, t1),
+  entry(svelteTool.id, 'ease-of-use', -2, t1),
+  entry(angularTool.id, 'cost', 0, t1),
+  entry(angularTool.id, 'performance', -1, t1),
+  entry(angularTool.id, 'ease-of-use', -1, t1),
+];
+
+/** Criteria using the -2 to +2 scale (Poor to Outstanding). */
+export const Neg2ToPos2Scale: Story = {
+  render: () => {
+    const store = useMemo(
+      () => createPughStore({ criteria: criteriaNeg2, tools, scores: scoresNeg2 }),
+      [],
+    );
+    return (
+      <PughStoreProvider store={store}>
+        <PughMatrix />
+      </PughStoreProvider>
+    );
   },
 };
 

@@ -1,4 +1,4 @@
-import type { ScoreEntry } from '../types';
+import type { ScoreEntry, ScoreScale } from '../types';
 import type { PughEvent, Branch } from '../events/types';
 
 export interface PughDomainState {
@@ -32,6 +32,8 @@ export interface PughUIState {
   editComment: string;
   editingHeader: { type: 'tool' | 'criterion'; id: string } | null;
   editHeaderValue: string;
+  editHeaderRangeId: string;
+  editHeaderLabelSetId: string;
 }
 
 export interface PughActions {
@@ -52,9 +54,12 @@ export interface PughActions {
   removeTool: (id: string) => void;
   addCriterion: (id: string, label: string) => void;
   removeCriterion: (id: string) => void;
+  setCriterionScale: (id: string, scale: ScoreScale) => void;
   startEditingHeader: (type: 'tool' | 'criterion', id: string) => void;
   cancelEditingHeader: () => void;
   setEditHeaderValue: (value: string) => void;
+  setEditHeaderRangeId: (id: string) => void;
+  setEditHeaderLabelSetId: (id: string) => void;
   saveHeaderEdit: () => void;
 }
 

@@ -4,6 +4,7 @@ export type {
   CriterionAdded,
   CriterionRenamed,
   CriterionRemoved,
+  CriterionScaleChanged,
   ToolAdded,
   ToolRenamed,
   ToolRemoved,

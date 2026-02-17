@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { usePughStore } from './store/usePughStore';
+import { MAIN_BRANCH_ID } from './ids';
 
 export interface BranchSelectorProps {
   isDark?: boolean;
@@ -135,7 +136,7 @@ export function BranchSelector({ isDark }: BranchSelectorProps) {
               <span className="pugh-branch-item-badge">
                 {eventsByBranch[branch.id]?.length ?? 0}
               </span>
-              {branch.id !== 'main' && (
+              {branch.id !== MAIN_BRANCH_ID && (
                 <button
                   type="button"
                   className="pugh-branch-delete-button"

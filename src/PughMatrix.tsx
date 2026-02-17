@@ -6,6 +6,7 @@ import {
 } from '@radix-ui/colors';
 import type { ScoreEntry } from './types';
 import { usePughStore } from './store/usePughStore';
+import { scoreId, toolId, criterionId } from './ids';
 import './pugh-matrix.css';
 
 export interface PughMatrixProps {
@@ -186,7 +187,7 @@ export default function PughMatrix({
     if (scoreNum != null && !trimmedLabel) return;
     if (scoreNum == null && !trimmedComment) return;
     addScore({
-      id: `score-${Date.now()}`,
+      id: scoreId(),
       toolId: editingCell.toolId,
       criterionId: editingCell.criterionId,
       score: scoreNum,
@@ -218,14 +219,14 @@ export default function PughMatrix({
 
   const handleAddTool = () => {
     const label = 'New Tool';
-    const id = `${label.toLowerCase().replace(/\s+/g, '-')}-${Date.now().toString(36)}`;
+    const id = toolId();
     addTool(id, label, 'anonymous');
     startEditingHeader('tool', id);
   };
 
   const handleAddCriterion = () => {
     const label = 'New Criterion';
-    const id = `${label.toLowerCase().replace(/\s+/g, '-')}-${Date.now().toString(36)}`;
+    const id = criterionId();
     addCriterion(id, label);
     startEditingHeader('criterion', id);
   };

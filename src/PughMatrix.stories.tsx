@@ -5,6 +5,7 @@ import PughMatrix from './PughMatrix';
 import { createPughStore } from './store/createPughStore';
 import { PughStoreProvider } from './store/PughStoreProvider';
 import { createLocalStoragePersister } from './persist/localStoragePersister';
+import { scoreId } from './ids';
 import './pugh-matrix.css';
 import type { Criterion, Tool, ScoreEntry } from './types';
 
@@ -22,7 +23,9 @@ const tools: Tool[] = [
   { id: 'angular', label: 'Angular', user: 'alice' },
 ];
 
-let idCounter = 0;
+const [costCri, perfCri, eouCri, commCri, docsCri] = criteria;
+const [reactTool, vueTool, svelteTool, angularTool] = tools;
+
 function entry(
   toolId: string,
   criterionId: string,
@@ -32,7 +35,7 @@ function entry(
   comment?: string,
 ): ScoreEntry {
   return {
-    id: `s${++idCounter}`,
+    id: scoreId(),
     toolId,
     criterionId,
     score,
@@ -50,7 +53,7 @@ function commentOnly(
   timestamp: number,
 ): ScoreEntry {
   return {
-    id: `s${++idCounter}`,
+    id: scoreId(),
     toolId,
     criterionId,
     comment,
@@ -64,45 +67,45 @@ const t2 = 1707686400000; // Feb 12, 2024
 const t3 = 1707772800000; // Feb 13, 2024
 
 const scores: ScoreEntry[] = [
-  entry('react', 'cost', 9, 'Free', t1),
-  entry('react', 'performance', 7, 'Good', t1),
-  entry('react', 'ease-of-use', 6, 'Moderate', t1),
-  entry('react', 'community', 10, 'Massive', t1),
-  entry('react', 'docs', 8, 'Extensive', t1),
+  entry(reactTool.id, costCri.id, 9, 'Free', t1),
+  entry(reactTool.id, perfCri.id, 7, 'Good', t1),
+  entry(reactTool.id, eouCri.id, 6, 'Moderate', t1),
+  entry(reactTool.id, commCri.id, 10, 'Massive', t1),
+  entry(reactTool.id, docsCri.id, 8, 'Extensive', t1),
 
-  entry('vue', 'cost', 9, 'Free', t1),
-  entry('vue', 'performance', 8, 'Great', t1),
-  entry('vue', 'ease-of-use', 9, 'Easy', t1),
-  entry('vue', 'community', 7, 'Strong', t1),
-  entry('vue', 'docs', 9, 'Excellent', t1),
+  entry(vueTool.id, costCri.id, 9, 'Free', t1),
+  entry(vueTool.id, perfCri.id, 8, 'Great', t1),
+  entry(vueTool.id, eouCri.id, 9, 'Easy', t1),
+  entry(vueTool.id, commCri.id, 7, 'Strong', t1),
+  entry(vueTool.id, docsCri.id, 9, 'Excellent', t1),
 
-  entry('svelte', 'cost', 9, 'Free', t1),
-  entry('svelte', 'performance', 10, 'Fastest', t1),
-  entry('svelte', 'ease-of-use', 8, 'Simple', t1),
-  entry('svelte', 'community', 5, 'Growing', t1),
-  entry('svelte', 'docs', 7, 'Good', t1),
+  entry(svelteTool.id, costCri.id, 9, 'Free', t1),
+  entry(svelteTool.id, perfCri.id, 10, 'Fastest', t1),
+  entry(svelteTool.id, eouCri.id, 8, 'Simple', t1),
+  entry(svelteTool.id, commCri.id, 5, 'Growing', t1),
+  entry(svelteTool.id, docsCri.id, 7, 'Good', t1),
 
-  entry('angular', 'cost', 9, 'Free', t1),
-  entry('angular', 'performance', 6, 'Decent', t1),
-  entry('angular', 'ease-of-use', 4, 'Complex', t1),
-  entry('angular', 'community', 8, 'Large', t1),
-  entry('angular', 'docs', 8, 'Thorough', t1),
+  entry(angularTool.id, costCri.id, 9, 'Free', t1),
+  entry(angularTool.id, perfCri.id, 6, 'Decent', t1),
+  entry(angularTool.id, eouCri.id, 4, 'Complex', t1),
+  entry(angularTool.id, commCri.id, 8, 'Large', t1),
+  entry(angularTool.id, docsCri.id, 8, 'Thorough', t1),
 ];
 
 // Scores with history: some cells have revised entries
 const scoresWithHistory: ScoreEntry[] = [
   ...scores,
-  entry('react', 'cost', 7, 'Revised', t2, 'Hidden infra costs'),
-  entry('react', 'performance', 8, 'Improved', t2, 'After React 19 release'),
-  entry('svelte', 'community', 7, 'Growing Fast', t2, 'SvelteKit adoption boosted ecosystem'),
+  entry(reactTool.id, costCri.id, 7, 'Revised', t2, 'Hidden infra costs'),
+  entry(reactTool.id, perfCri.id, 8, 'Improved', t2, 'After React 19 release'),
+  entry(svelteTool.id, commCri.id, 7, 'Growing Fast', t2, 'SvelteKit adoption boosted ecosystem'),
 ];
 
 // Scores with dialog: comment-only follow-ups that don't overwrite scores
 const scoresWithDialog: ScoreEntry[] = [
   ...scoresWithHistory,
-  commentOnly('react', 'cost', 'But what about hosting?', t3),
-  commentOnly('react', 'cost', 'Vercel free tier covers most use cases', t3 + 1000),
-  commentOnly('vue', 'ease-of-use', 'Composition API has a learning curve though', t3),
+  commentOnly(reactTool.id, costCri.id, 'But what about hosting?', t3),
+  commentOnly(reactTool.id, costCri.id, 'Vercel free tier covers most use cases', t3 + 1000),
+  commentOnly(vueTool.id, eouCri.id, 'Composition API has a learning curve though', t3),
 ];
 
 /** Helper: wraps PughMatrix in a store provider for each story. */
@@ -172,14 +175,14 @@ export const WithTotals: Story = {
 /** A single column highlighted with the `highlight` prop. */
 export const HighlightVue: Story = {
   args: {
-    highlight: 'vue',
+    highlight: vueTool.id,
   },
 };
 
 /** Highlighting a different column for comparison. */
 export const HighlightSvelte: Story = {
   args: {
-    highlight: 'svelte',
+    highlight: svelteTool.id,
   },
 };
 
@@ -197,7 +200,7 @@ export const DarkMode: Story = {
 export const DarkModeWithHighlight: Story = {
   args: {
     isDark: true,
-    highlight: 'react',
+    highlight: reactTool.id,
   },
   parameters: {
     backgrounds: { default: 'dark' },
@@ -215,7 +218,7 @@ export const ShowWinner: Story = {
 export const WinnerWithHighlight: Story = {
   args: {
     showWinner: true,
-    highlight: 'angular',
+    highlight: angularTool.id,
   },
 };
 

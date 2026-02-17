@@ -5,6 +5,7 @@ import PughMatrix from './PughMatrix';
 import { createPughStore } from './store/createPughStore';
 import { createLocalStoragePersister } from './persist/localStoragePersister';
 import { PughStoreProvider } from './store/PughStoreProvider';
+import { scoreId, toolId as makeToolId, MAIN_BRANCH_ID } from './ids';
 import './pugh-matrix.css';
 
 const criteria = [
@@ -17,6 +18,9 @@ const tools = [
   { id: 'vue', label: 'Vue', user: 'alice' },
   { id: 'svelte', label: 'Svelte', user: 'alice' },
 ];
+
+const [costCri, perfCri, eouCri] = criteria;
+const [reactTool, vueTool, svelteTool] = tools;
 
 function StoryBranchSelector({
   isDark,
@@ -47,46 +51,47 @@ function StoryBranchSelector({
       const t = Date.now();
 
       // -- main: moderate baseline (yellows/limes) --
-      state().addScore({ id: 'm1', toolId: 'react', criterionId: 'cost', score: 5, label: 'Moderate', timestamp: t, user: 'alice' });
-      state().addScore({ id: 'm2', toolId: 'react', criterionId: 'performance', score: 6, label: 'Decent', timestamp: t, user: 'alice' });
-      state().addScore({ id: 'm3', toolId: 'react', criterionId: 'ease-of-use', score: 5, label: 'Average', timestamp: t, user: 'alice' });
-      state().addScore({ id: 'm4', toolId: 'vue', criterionId: 'cost', score: 6, label: 'Fair', timestamp: t, user: 'alice' });
-      state().addScore({ id: 'm5', toolId: 'vue', criterionId: 'performance', score: 5, label: 'OK', timestamp: t, user: 'alice' });
-      state().addScore({ id: 'm6', toolId: 'vue', criterionId: 'ease-of-use', score: 7, label: 'Good', timestamp: t, user: 'alice' });
-      state().addScore({ id: 'm7', toolId: 'svelte', criterionId: 'cost', score: 7, label: 'Cheap', timestamp: t, user: 'alice' });
-      state().addScore({ id: 'm8', toolId: 'svelte', criterionId: 'performance', score: 6, label: 'Decent', timestamp: t, user: 'alice' });
-      state().addScore({ id: 'm9', toolId: 'svelte', criterionId: 'ease-of-use', score: 5, label: 'Average', timestamp: t, user: 'alice' });
+      state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: costCri.id, score: 5, label: 'Moderate', timestamp: t, user: 'alice' });
+      state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: perfCri.id, score: 6, label: 'Decent', timestamp: t, user: 'alice' });
+      state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: eouCri.id, score: 5, label: 'Average', timestamp: t, user: 'alice' });
+      state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: costCri.id, score: 6, label: 'Fair', timestamp: t, user: 'alice' });
+      state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: perfCri.id, score: 5, label: 'OK', timestamp: t, user: 'alice' });
+      state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: eouCri.id, score: 7, label: 'Good', timestamp: t, user: 'alice' });
+      state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: costCri.id, score: 7, label: 'Cheap', timestamp: t, user: 'alice' });
+      state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: perfCri.id, score: 6, label: 'Decent', timestamp: t, user: 'alice' });
+      state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: eouCri.id, score: 5, label: 'Average', timestamp: t, user: 'alice' });
 
       // -- 'pro-react': Bob loves React, adds Angular, tanks the rest --
       state().createBranch('pro-react');
-      state().addTool('angular', 'Angular', 'bob');
-      state().addScore({ id: 'e1', toolId: 'react', criterionId: 'cost', score: 10, label: 'Free!', timestamp: t + 1, user: 'bob' });
-      state().addScore({ id: 'e2', toolId: 'react', criterionId: 'performance', score: 10, label: 'Blazing', timestamp: t + 1, user: 'bob' });
-      state().addScore({ id: 'e3', toolId: 'react', criterionId: 'ease-of-use', score: 9, label: 'Great DX', timestamp: t + 1, user: 'bob' });
-      state().addScore({ id: 'e4', toolId: 'vue', criterionId: 'cost', score: 2, label: 'Expensive', timestamp: t + 1, user: 'bob' });
-      state().addScore({ id: 'e5', toolId: 'vue', criterionId: 'performance', score: 1, label: 'Slow', timestamp: t + 1, user: 'bob' });
-      state().addScore({ id: 'e6', toolId: 'vue', criterionId: 'ease-of-use', score: 3, label: 'Confusing', timestamp: t + 1, user: 'bob' });
-      state().addScore({ id: 'e7', toolId: 'svelte', criterionId: 'cost', score: 2, label: 'Niche', timestamp: t + 1, user: 'bob' });
-      state().addScore({ id: 'e8', toolId: 'svelte', criterionId: 'performance', score: 3, label: 'Unproven', timestamp: t + 1, user: 'bob' });
-      state().addScore({ id: 'e9', toolId: 'svelte', criterionId: 'ease-of-use', score: 2, label: 'Weird', timestamp: t + 1, user: 'bob' });
-      state().addScore({ id: 'e10', toolId: 'angular', criterionId: 'cost', score: 8, label: 'Free', timestamp: t + 1, user: 'bob' });
-      state().addScore({ id: 'e11', toolId: 'angular', criterionId: 'performance', score: 7, label: 'Solid', timestamp: t + 1, user: 'bob' });
-      state().addScore({ id: 'e12', toolId: 'angular', criterionId: 'ease-of-use', score: 4, label: 'Steep', timestamp: t + 1, user: 'bob' });
+      const angularId = makeToolId();
+      state().addTool(angularId, 'Angular', 'bob');
+      state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: costCri.id, score: 10, label: 'Free!', timestamp: t + 1, user: 'bob' });
+      state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: perfCri.id, score: 10, label: 'Blazing', timestamp: t + 1, user: 'bob' });
+      state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: eouCri.id, score: 9, label: 'Great DX', timestamp: t + 1, user: 'bob' });
+      state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: costCri.id, score: 2, label: 'Expensive', timestamp: t + 1, user: 'bob' });
+      state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: perfCri.id, score: 1, label: 'Slow', timestamp: t + 1, user: 'bob' });
+      state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: eouCri.id, score: 3, label: 'Confusing', timestamp: t + 1, user: 'bob' });
+      state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: costCri.id, score: 2, label: 'Niche', timestamp: t + 1, user: 'bob' });
+      state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: perfCri.id, score: 3, label: 'Unproven', timestamp: t + 1, user: 'bob' });
+      state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: eouCri.id, score: 2, label: 'Weird', timestamp: t + 1, user: 'bob' });
+      state().addScore({ id: scoreId(), toolId: angularId, criterionId: costCri.id, score: 8, label: 'Free', timestamp: t + 1, user: 'bob' });
+      state().addScore({ id: scoreId(), toolId: angularId, criterionId: perfCri.id, score: 7, label: 'Solid', timestamp: t + 1, user: 'bob' });
+      state().addScore({ id: scoreId(), toolId: angularId, criterionId: eouCri.id, score: 4, label: 'Steep', timestamp: t + 1, user: 'bob' });
 
       // -- 'svelte-wins': Carol removes React, renames criterion, Svelte dominates --
-      state().switchBranch('main');
+      state().switchBranch(MAIN_BRANCH_ID);
       state().createBranch('svelte-wins');
-      state().removeTool('react');
-      state().renameCriterion('ease-of-use', 'Developer Joy');
-      state().addScore({ id: 'c1', toolId: 'svelte', criterionId: 'cost', score: 10, label: 'Free', timestamp: t + 2, user: 'carol' });
-      state().addScore({ id: 'c2', toolId: 'svelte', criterionId: 'performance', score: 10, label: 'Fastest', timestamp: t + 2, user: 'carol' });
-      state().addScore({ id: 'c3', toolId: 'svelte', criterionId: 'ease-of-use', score: 10, label: 'Joyful', timestamp: t + 2, user: 'carol' });
-      state().addScore({ id: 'c4', toolId: 'vue', criterionId: 'cost', score: 3, label: 'Costly', timestamp: t + 2, user: 'carol' });
-      state().addScore({ id: 'c5', toolId: 'vue', criterionId: 'performance', score: 4, label: 'Meh', timestamp: t + 2, user: 'carol' });
-      state().addScore({ id: 'c6', toolId: 'vue', criterionId: 'ease-of-use', score: 3, label: 'Tedious', timestamp: t + 2, user: 'carol' });
+      state().removeTool(reactTool.id);
+      state().renameCriterion(eouCri.id, 'Developer Joy');
+      state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: costCri.id, score: 10, label: 'Free', timestamp: t + 2, user: 'carol' });
+      state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: perfCri.id, score: 10, label: 'Fastest', timestamp: t + 2, user: 'carol' });
+      state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: eouCri.id, score: 10, label: 'Joyful', timestamp: t + 2, user: 'carol' });
+      state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: costCri.id, score: 3, label: 'Costly', timestamp: t + 2, user: 'carol' });
+      state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: perfCri.id, score: 4, label: 'Meh', timestamp: t + 2, user: 'carol' });
+      state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: eouCri.id, score: 3, label: 'Tedious', timestamp: t + 2, user: 'carol' });
 
       // Start on main
-      state().switchBranch('main');
+      state().switchBranch(MAIN_BRANCH_ID);
     }
     return s;
     // eslint-disable-next-line react-hooks/exhaustive-deps

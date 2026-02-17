@@ -6,6 +6,7 @@ import type { PughStore, PughDomainState } from './types';
 import type { PughEvent, Branch } from '../events/types';
 import { projectEvents } from '../events/projection';
 import { seedEventsFromOptions } from '../events/seedFromLegacy';
+import { eventId, branchId as makeBranchId, MAIN_BRANCH_ID } from '../ids';
 
 export interface CreatePughStoreOptions {
   criteria?: Criterion[];
@@ -26,7 +27,7 @@ function createPughStorageAdapter(persister: Persister) {
 
 function makeEvent(type: PughEvent['type'], payload: Record<string, unknown>): PughEvent {
   return {
-    id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: eventId(),
     timestamp: Date.now(),
     user: 'anonymous',
     type,
@@ -47,7 +48,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
   const initialEvents = seedEventsFromOptions({ criteria, tools, scores, weights });
   const initialDomain = projectEvents(initialEvents);
   const mainBranch: Branch = {
-    id: 'main',
+    id: MAIN_BRANCH_ID,
     name: 'main',
     createdAt: Date.now(),
   };
@@ -68,9 +69,9 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
 
     // Event store state
     events: initialEvents,
-    eventsByBranch: { main: initialEvents },
+    eventsByBranch: { [MAIN_BRANCH_ID]: initialEvents },
     branches: [mainBranch],
-    activeBranchId: 'main',
+    activeBranchId: MAIN_BRANCH_ID,
 
     // Event store actions
     dispatch: (event: PughEvent) => {
@@ -84,7 +85,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
     createBranch: (name: string) => {
       const state = get();
       const parentEvents = state.eventsByBranch[state.activeBranchId] ?? [];
-      const newId = `branch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const newId = makeBranchId();
       const newBranch: Branch = {
         id: newId,
         name,
@@ -120,7 +121,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
 
     deleteBranch: (branchId: string) => {
       const state = get();
-      if (branchId === 'main') return;
+      if (branchId === MAIN_BRANCH_ID) return;
       const remaining = state.branches.filter((b) => b.id !== branchId);
       const { [branchId]: _, ...remainingEvents } = state.eventsByBranch;
       if (state.activeBranchId === branchId) {

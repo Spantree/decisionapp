@@ -1,5 +1,6 @@
 import type { Criterion, Tool, ScoreEntry } from '../types';
 import type { PughEvent } from './types';
+import { eventId } from '../ids';
 
 export interface SeedOptions {
   criteria?: Criterion[];
@@ -11,11 +12,10 @@ export interface SeedOptions {
 export function seedEventsFromOptions(opts: SeedOptions): PughEvent[] {
   const events: PughEvent[] = [];
   const now = Date.now();
-  let seq = 0;
 
   for (const c of opts.criteria ?? []) {
     events.push({
-      id: `seed-${seq++}`,
+      id: eventId(),
       type: 'CriterionAdded',
       criterionId: c.id,
       label: c.label,
@@ -29,7 +29,7 @@ export function seedEventsFromOptions(opts: SeedOptions): PughEvent[] {
     for (const [criterionId, weight] of Object.entries(opts.weights)) {
       if (weight !== 10) {
         events.push({
-          id: `seed-${seq++}`,
+          id: eventId(),
           type: 'WeightSet',
           criterionId,
           weight,
@@ -42,7 +42,7 @@ export function seedEventsFromOptions(opts: SeedOptions): PughEvent[] {
 
   for (const t of opts.tools ?? []) {
     events.push({
-      id: `seed-${seq++}`,
+      id: eventId(),
       type: 'ToolAdded',
       toolId: t.id,
       label: t.label,
@@ -53,7 +53,7 @@ export function seedEventsFromOptions(opts: SeedOptions): PughEvent[] {
 
   for (const s of opts.scores ?? []) {
     events.push({
-      id: `seed-${seq++}`,
+      id: eventId(),
       type: 'ScoreSet',
       toolId: s.toolId,
       criterionId: s.criterionId,

@@ -167,7 +167,7 @@ export const Default: Story = {};
 export const WithTotals: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByRole('button', { name: /show totals/i });
+    const button = await canvas.findByRole('button', { name: /show totals/i });
     await userEvent.click(button);
   },
 };

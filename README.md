@@ -1,4 +1,4 @@
-# decision-cc
+# decisions-cc
 
 A standalone React component for [Pugh decision matrices](https://en.wikipedia.org/wiki/Decision-matrix_method) — weighted multi-criteria comparison tables with interactive scoring, color-coded cells, and dark mode support.
 

@@ -160,7 +160,7 @@ export default function PughMatrix({
       }
 
       for (const [key, arr] of history.entries()) {
-        history.set(key, arr.toSorted((a, b) => b.timestamp - a.timestamp));
+        history.set(key, [...arr].sort((a, b) => b.timestamp - a.timestamp));
       }
 
       // Collect all scores per criterion (for unbounded normalization)

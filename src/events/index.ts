@@ -1,8 +1,5 @@
 export type {
   PughEvent,
-  Branch,
-  MatrixCreated,
-  MatrixDefaultScaleSet,
   CriterionAdded,
   CriterionRenamed,
   CriterionRemoved,

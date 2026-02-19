@@ -244,6 +244,7 @@ export interface RatingEntry {
   /** Overrides the criterion's default label for this score value */
   label?: string;
   comment?: string;
+  parentCommentId?: string;
   timestamp: number;
   user: string;
 }

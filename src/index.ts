@@ -30,7 +30,10 @@ export type { PughEventStoreState, PughEventStoreActions } from './store/types';
 export { BranchSelector } from './BranchSelector';
 export type { BranchSelectorProps } from './BranchSelector';
 
-export { eventId, ratingId, optionId, criterionId, commitId } from './ids';
+export { default as CellDetailDrawer } from './CellDetailDrawer';
+export type { CellDetailDrawerProps } from './CellDetailDrawer';
+
+export { eventId, ratingId, optionId, criterionId, commitId, commentId } from './ids';
 
 export type {
   Commit,

@@ -56,7 +56,7 @@ export interface PughUIState {
   editHeaderDescription: string;
   customLabelDrawerOpen: boolean;
   editCustomLabels: Record<number, string>;
-  detailModalOpen: boolean;
+  drawerCell: { optionId: string; criterionId: string } | null;
 }
 
 export interface PughActions {
@@ -98,8 +98,9 @@ export interface PughActions {
   setCustomLabelDrawerOpen: (open: boolean) => void;
   setEditCustomLabel: (value: number, label: string) => void;
   applyCustomLabels: () => void;
-  openDetailModal: () => void;
-  closeDetailModal: () => void;
+  openDrawer: (optionId: string, criterionId: string) => void;
+  closeDrawer: () => void;
+  addComment: (optionId: string, criterionId: string, comment: string, parentCommentId?: string) => void;
   saveAndNavigate: (direction: 'right' | 'left' | 'down' | 'up') => void;
   startEditingWithPreFill: (optionId: string, criterionId: string) => void;
 }

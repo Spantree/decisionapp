@@ -25,3 +25,7 @@ export function criterionId(): string {
 export function commitId(): string {
   return `commit_${uuidv7()}`;
 }
+
+export function commentId(): string {
+  return `cmt_${uuidv7()}`;
+}

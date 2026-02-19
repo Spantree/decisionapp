@@ -7,7 +7,7 @@ import type { PughEvent } from '../events/types';
 import type { MatrixRepository } from '../repository/types';
 import { projectEvents } from '../events/projection';
 import { seedEventsFromOptions } from '../events/seedFromLegacy';
-import { eventId, MAIN_BRANCH_ID } from '../ids';
+import { eventId, commentId, MAIN_BRANCH_ID } from '../ids';
 import { createMemoryRepository } from '../repository/memory';
 
 export interface CreatePughStoreOptions {
@@ -317,7 +317,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       editHeaderDescription: '',
       customLabelDrawerOpen: false,
       editCustomLabels: {},
-      detailModalOpen: false,
+      drawerCell: null,
 
       // Domain actions (thin wrappers around dispatch)
       addRating: (entry: RatingEntry) => {
@@ -608,21 +608,33 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
         // Use startEditingWithPreFill on the next cell
         state.startEditingWithPreFill(nextOptId, nextCritId);
       },
-      openDetailModal: () => {
+      openDrawer: (optionId: string, criterionId: string) => {
         const state = get();
-        if (!state.editingCell) return;
-        const { optionId, criterionId } = state.editingCell;
         const latest = state.ratings
           .filter((r) => r.optionId === optionId && r.criterionId === criterionId && r.value != null)
           .sort((a, b) => b.timestamp - a.timestamp)[0];
         set({
-          detailModalOpen: true,
+          drawerCell: { optionId, criterionId },
+          editingCell: null,
+          editScore: latest?.value != null ? String(latest.value) : '',
           editLabel: latest?.label ?? '',
-          editComment: latest?.comment ?? '',
-        }, false, 'openDetailModal');
+          editComment: '',
+        }, false, { type: 'openDrawer', optionId, criterionId });
       },
-      closeDetailModal: () => {
-        set({ detailModalOpen: false }, false, 'closeDetailModal');
+      closeDrawer: () => {
+        set({ drawerCell: null }, false, 'closeDrawer');
+      },
+      addComment: (optionId: string, criterionId: string, comment: string, parentCommentId?: string) => {
+        const state = get();
+        state.dispatch(
+          makeEvent('CommentAdded', {
+            id: commentId(),
+            optionId,
+            criterionId,
+            comment,
+            parentCommentId,
+          }, state.activeBranch),
+        );
       },
       saveHeaderEdit: () => {
         const state = get();

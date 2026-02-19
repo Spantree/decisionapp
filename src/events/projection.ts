@@ -159,6 +159,7 @@ export function projectEvents(events: PughEvent[]): PughDomainState {
           criterionId: event.criterionId,
           value: undefined,
           comment: event.comment,
+          parentCommentId: event.parentCommentId,
           timestamp: event.timestamp,
           user: event.user,
         });

@@ -134,6 +134,7 @@ export interface CommentAdded extends PughEventBase {
   optionId: string;
   criterionId: string;
   comment: string;
+  parentCommentId?: string;
 }
 
 export type PughEvent =

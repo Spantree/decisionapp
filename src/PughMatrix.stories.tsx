@@ -249,17 +249,33 @@ export const WinnerDarkMode: Story = {
   },
 };
 
-/** Cells with rating history — hover a cell to see previous ratings in a tooltip. */
+/** Cells with rating history — open the drawer (pencil or Cmd+Enter) to see previous ratings. */
 export const WithRatingHistory: Story = {
   args: {
     ratings: ratingsWithHistory,
   },
 };
 
-/** Cells with comment-only follow-ups — the rating persists while a dialog appears in hover history. */
+/** Cells with comment-only follow-ups — open drawer (pencil or Cmd+Enter) to see full history and comments. */
 export const WithDialog: Story = {
   args: {
     ratings: ratingsWithDialog,
+  },
+};
+
+/** Drawer open — click a cell in read-only mode or use pencil button to open the cell detail drawer. */
+export const DrawerOpen: Story = {
+  args: {
+    ratings: ratingsWithDialog,
+    readOnly: true,
+  },
+  play: async ({ canvasElement }) => {
+    // Click the first scored cell to open the drawer in read-only mode
+    const canvas = within(canvasElement);
+    const cells = canvasElement.querySelectorAll('.pugh-rating-cell-clickable');
+    if (cells[0]) {
+      await userEvent.click(cells[0]);
+    }
   },
 };
 

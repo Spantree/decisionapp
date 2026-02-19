@@ -313,6 +313,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       editHeaderScaleMax: '10',
       editHeaderScaleStep: '1',
       editHeaderLabelSetId: LABELS_QUALITY_1_10.id,
+      editHeaderDescription: '',
       customLabelDrawerOpen: false,
       editCustomLabels: {},
 
@@ -429,6 +430,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
           return {
             editingHeader: { type, id },
             editHeaderValue: item?.label ?? '',
+            editHeaderDescription: item?.description ?? '',
             editHeaderLabelSetId: labelSetId,
             editCustomLabels: customLabels,
             customLabelDrawerOpen: false,
@@ -438,6 +440,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       cancelEditingHeader: () => set(() => ({
         editingHeader: null,
         editHeaderValue: '',
+        editHeaderDescription: '',
         editHeaderScaleKind: 'numeric',
         editHeaderScaleMin: '1',
         editHeaderScaleMax: '10',
@@ -452,6 +455,15 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       setEditHeaderScaleMax: (editHeaderScaleMax: string) => set(() => ({ editHeaderScaleMax }), false, { type: 'setEditHeaderScaleMax', editHeaderScaleMax }),
       setEditHeaderScaleStep: (editHeaderScaleStep: string) => set(() => ({ editHeaderScaleStep }), false, { type: 'setEditHeaderScaleStep', editHeaderScaleStep }),
       setEditHeaderLabelSetId: (editHeaderLabelSetId: string) => set(() => ({ editHeaderLabelSetId }), false, { type: 'setEditHeaderLabelSetId', editHeaderLabelSetId }),
+      setEditHeaderDescription: (editHeaderDescription: string) => set(() => ({ editHeaderDescription }), false, { type: 'setEditHeaderDescription', editHeaderDescription }),
+      setCriterionDescription: (id: string, description: string) => {
+        const state = get();
+        state.dispatch(makeEvent('CriterionDescriptionChanged', { criterionId: id, description }, state.activeBranch));
+      },
+      setOptionDescription: (id: string, description: string) => {
+        const state = get();
+        state.dispatch(makeEvent('OptionDescriptionChanged', { optionId: id, description }, state.activeBranch));
+      },
       setCustomLabelDrawerOpen: (open: boolean) => {
         if (open) {
           const state = get();
@@ -507,10 +519,19 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
         const trimmed = state.editHeaderValue.trim();
         if (!trimmed) return;
         const { type, id } = state.editingHeader;
+        const descTrimmed = state.editHeaderDescription.trim();
         if (type === 'option') {
           state.dispatch(makeEvent('OptionRenamed', { optionId: id, label: trimmed }, state.activeBranch));
+          const existingOpt = state.options.find((o) => o.id === id);
+          if (descTrimmed !== (existingOpt?.description ?? '')) {
+            state.dispatch(makeEvent('OptionDescriptionChanged', { optionId: id, description: descTrimmed }, state.activeBranch));
+          }
         } else {
           state.dispatch(makeEvent('CriterionRenamed', { criterionId: id, label: trimmed }, state.activeBranch));
+          const existingCrit = state.criteria.find((c) => c.id === id);
+          if (descTrimmed !== (existingCrit?.description ?? '')) {
+            state.dispatch(makeEvent('CriterionDescriptionChanged', { criterionId: id, description: descTrimmed }, state.activeBranch));
+          }
           // Build the new scale from edit state and dispatch scale change
           let newScale: ScaleType;
           switch (state.editHeaderScaleKind) {
@@ -543,7 +564,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
           }
           state.dispatch(makeEvent('CriterionScaleOverridden', { criterionId: id, scale: newScale }, state.activeBranch));
         }
-        set({ editingHeader: null, editHeaderValue: '' }, false, 'saveHeaderEdit');
+        set({ editingHeader: null, editHeaderValue: '', editHeaderDescription: '' }, false, 'saveHeaderEdit');
       },
     });
   };

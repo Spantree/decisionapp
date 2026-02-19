@@ -6,6 +6,7 @@ import {
 } from '@radix-ui/colors';
 import type { RatingEntry, ScaleType } from './types';
 import { getEffectiveScale, normalizeScore, getScoreColor, formatCount, labelSetsForRange, resolveScoreLabel, CUSTOM_LABEL_SET_ID } from './types';
+import Markdown from './Markdown';
 import { usePughStore } from './store/usePughStore';
 import { ratingId, optionId, criterionId } from './ids';
 import './pugh-matrix.css';
@@ -132,6 +133,8 @@ export default function PughMatrix({
   const setCustomLabelDrawerOpen = usePughStore((s) => s.setCustomLabelDrawerOpen);
   const setEditCustomLabel = usePughStore((s) => s.setEditCustomLabel);
   const applyCustomLabels = usePughStore((s) => s.applyCustomLabels);
+  const editHeaderDescription = usePughStore((s) => s.editHeaderDescription);
+  const setEditHeaderDescription = usePughStore((s) => s.setEditHeaderDescription);
 
   const { latestByCell, historyByCell, weightedTotals, maxTotal, winner, allScoresByCriterion } =
     useMemo(() => {
@@ -427,29 +430,61 @@ export default function PughMatrix({
                   onClick={readOnly ? undefined : () => startEditingHeader('option', option.id)}
                 >
                   {isEditingHeaderCell('option', option.id) ? (
-                    <div className="pugh-header-edit-row" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="text"
-                        aria-label={`Rename option ${option.label}`}
-                        value={editHeaderValue}
-                        onChange={(e) => setEditHeaderValue(e.target.value)}
-                        onKeyDown={handleHeaderKeyDown}
-                        onBlur={handleSaveHeader}
-                        className="pugh-header-input"
-                        autoFocus
+                    <div className="pugh-header-edit-col" onClick={(e) => e.stopPropagation()}>
+                      <div className="pugh-header-edit-row">
+                        <input
+                          type="text"
+                          aria-label={`Rename option ${option.label}`}
+                          value={editHeaderValue}
+                          onChange={(e) => setEditHeaderValue(e.target.value)}
+                          onKeyDown={handleHeaderKeyDown}
+                          className="pugh-header-input"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="pugh-header-delete-button"
+                          aria-label={`Delete option ${option.label}`}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={handleDeleteHeader}
+                        >
+                          🗑
+                        </button>
+                      </div>
+                      <textarea
+                        placeholder="Description (optional, supports markdown)"
+                        aria-label={`Description for option ${option.label}`}
+                        value={editHeaderDescription}
+                        onChange={(e) => setEditHeaderDescription(e.target.value)}
+                        className="pugh-description-textarea"
+                        rows={2}
                       />
-                      <button
-                        type="button"
-                        className="pugh-header-delete-button"
-                        aria-label={`Delete option ${option.label}`}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={handleDeleteHeader}
-                      >
-                        🗑
-                      </button>
+                      <div className="pugh-edit-actions">
+                        <button type="button" onClick={handleSaveHeader}>Save</button>
+                        <button type="button" onClick={cancelEditingHeader}>Cancel</button>
+                      </div>
                     </div>
                   ) : (
-                    isWinner(option.id) ? `👑 ${option.label}` : option.label
+                    <span className="pugh-header-label-row">
+                      {isWinner(option.id) ? `👑 ${option.label}` : option.label}
+                      {option.description && (
+                        <HoverCard.Root>
+                          <HoverCard.Trigger>
+                            <span
+                              className="pugh-description-icon"
+                              onClick={(e) => e.stopPropagation()}
+                              role="button"
+                              aria-label={`Info for ${option.label}`}
+                            >
+                              ℹ
+                            </span>
+                          </HoverCard.Trigger>
+                          <HoverCard.Content size="2" maxWidth="320px">
+                            <Markdown content={option.description} />
+                          </HoverCard.Content>
+                        </HoverCard.Root>
+                      )}
+                    </span>
                   )}
                 </Table.ColumnHeaderCell>
               ))}
@@ -498,6 +533,14 @@ export default function PughMatrix({
                           🗑
                         </button>
                       </div>
+                      <textarea
+                        placeholder="Description (optional, supports markdown)"
+                        aria-label={`Description for criterion ${criterion.label}`}
+                        value={editHeaderDescription}
+                        onChange={(e) => setEditHeaderDescription(e.target.value)}
+                        className="pugh-description-textarea"
+                        rows={2}
+                      />
                       <select
                         aria-label={`Scale type for ${criterion.label}`}
                         className="pugh-header-select"
@@ -599,7 +642,26 @@ export default function PughMatrix({
                       </div>
                     </div>
                   ) : (
-                    criterion.label
+                    <span className="pugh-header-label-row">
+                      {criterion.label}
+                      {criterion.description && (
+                        <HoverCard.Root>
+                          <HoverCard.Trigger>
+                            <span
+                              className="pugh-description-icon"
+                              onClick={(e) => e.stopPropagation()}
+                              role="button"
+                              aria-label={`Info for ${criterion.label}`}
+                            >
+                              ℹ
+                            </span>
+                          </HoverCard.Trigger>
+                          <HoverCard.Content size="2" maxWidth="320px">
+                            <Markdown content={criterion.description} />
+                          </HoverCard.Content>
+                        </HoverCard.Root>
+                      )}
+                    </span>
                   )}
                 </Table.RowHeaderCell>
                 {showWeights && (

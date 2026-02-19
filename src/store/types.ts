@@ -50,6 +50,7 @@ export interface PughUIState {
   editHeaderScaleMax: string;
   editHeaderScaleStep: string;
   editHeaderLabelSetId: string;
+  editHeaderDescription: string;
   customLabelDrawerOpen: boolean;
   editCustomLabels: Record<number, string>;
 }
@@ -84,6 +85,9 @@ export interface PughActions {
   setEditHeaderScaleMax: (max: string) => void;
   setEditHeaderScaleStep: (step: string) => void;
   setEditHeaderLabelSetId: (id: string) => void;
+  setEditHeaderDescription: (description: string) => void;
+  setCriterionDescription: (id: string, description: string) => void;
+  setOptionDescription: (id: string, description: string) => void;
   saveHeaderEdit: () => void;
   setCustomLabelDrawerOpen: (open: boolean) => void;
   setEditCustomLabel: (value: number, label: string) => void;

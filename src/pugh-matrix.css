@@ -937,3 +937,110 @@
   border-color: var(--pugh-border-color);
   color: var(--pugh-text);
 }
+
+/* ------------------------------------------------------------------ */
+/*  Description icon, textarea & rendered content                      */
+/* ------------------------------------------------------------------ */
+
+.pugh-header-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pugh-description-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  font-size: 0.7rem;
+  font-style: normal;
+  line-height: 1;
+  border-radius: 50%;
+  background: var(--pugh-head-bg);
+  color: var(--pugh-primary);
+  border: 1px solid var(--pugh-border-color);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.pugh-description-icon:hover {
+  opacity: 1;
+}
+
+.pugh-description-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 3rem;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.78rem;
+  border: 1px solid var(--pugh-border-color);
+  border-radius: 4px;
+  background: var(--pugh-bg);
+  color: var(--pugh-text);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.pugh-description-textarea:focus {
+  outline: 2px solid var(--pugh-primary);
+  outline-offset: -1px;
+}
+
+.pugh-description-content {
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.pugh-description-content p {
+  margin: 0.3rem 0;
+}
+
+.pugh-description-content p:first-child {
+  margin-top: 0;
+}
+
+.pugh-description-content p:last-child {
+  margin-bottom: 0;
+}
+
+.pugh-description-content ul,
+.pugh-description-content ol {
+  padding-left: 1.4rem;
+  margin: 0.3rem 0;
+}
+
+.pugh-description-content code {
+  padding: 0.1rem 0.3rem;
+  font-size: 0.78rem;
+  background: var(--pugh-head-bg);
+  border-radius: 3px;
+}
+
+.pugh-description-content pre {
+  padding: 0.5rem;
+  background: var(--pugh-head-bg);
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0.3rem 0;
+}
+
+.pugh-description-content pre code {
+  padding: 0;
+  background: none;
+}
+
+.pugh-description-content blockquote {
+  margin: 0.3rem 0;
+  padding-left: 0.7rem;
+  border-left: 3px solid var(--pugh-border-color);
+  opacity: 0.85;
+}
+
+.pugh-description-content a {
+  color: var(--pugh-primary);
+  text-decoration: underline;
+}

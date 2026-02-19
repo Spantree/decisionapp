@@ -50,23 +50,23 @@
   outline-offset: -1px;
 }
 
-.pugh-score-cell {
+.pugh-rating-cell {
   font-variant-numeric: tabular-nums;
   min-width: 90px;
   vertical-align: middle;
 }
 
-.pugh-score-fill {
+.pugh-rating-fill {
   border-radius: 6px;
   padding: 0.35rem 0.5rem;
   transition: background-color 0.15s ease;
 }
 
-.pugh-score-cell-editable {
+.pugh-rating-cell-editable {
   cursor: pointer;
 }
 
-.pugh-score-trigger {
+.pugh-rating-trigger {
   display: block;
 }
 
@@ -78,7 +78,7 @@
   border-top: 1px solid var(--pugh-border-color);
 }
 
-.pugh-history-score {
+.pugh-history-rating {
   font-weight: 600;
 }
 
@@ -182,14 +182,14 @@
   color: var(--pugh-primary);
 }
 
-.pugh-score-number {
+.pugh-rating-number {
   display: block;
   font-weight: 700;
   font-size: 1rem;
   line-height: 1.2;
 }
 
-.pugh-score-label {
+.pugh-rating-label {
   display: block;
   font-size: 0.7rem;
   font-weight: 400;
@@ -198,7 +198,7 @@
   margin-top: 0.15rem;
 }
 
-.pugh-tool-header {
+.pugh-option-header {
   font-size: 0.8rem;
   min-width: 90px;
 }

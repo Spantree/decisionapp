@@ -1,10 +1,15 @@
 import type { ScaleType } from '../types';
 
-interface PughEventBase {
+export interface PughEventBase {
   id: string;
   timestamp: number;
   user: string;
+  branchId: string;
+  userId?: string;
+  correlationId?: string;
 }
+
+// --- Kept unchanged ---
 
 export interface MatrixCreated extends PughEventBase {
   type: 'MatrixCreated';
@@ -29,7 +34,7 @@ export interface CriterionAdded extends PughEventBase {
 export interface CriterionRenamed extends PughEventBase {
   type: 'CriterionRenamed';
   criterionId: string;
-  newLabel: string;
+  label: string;
 }
 
 export interface CriterionRemoved extends PughEventBase {
@@ -43,48 +48,112 @@ export interface CriterionScaleOverridden extends PughEventBase {
   scale: ScaleType;
 }
 
-export interface ToolAdded extends PughEventBase {
-  type: 'ToolAdded';
-  toolId: string;
+// --- Renamed events ---
+
+export interface OptionAdded extends PughEventBase {
+  type: 'OptionAdded';
+  optionId: string;
   label: string;
 }
 
-export interface ToolRenamed extends PughEventBase {
-  type: 'ToolRenamed';
-  toolId: string;
-  newLabel: string;
+export interface OptionRenamed extends PughEventBase {
+  type: 'OptionRenamed';
+  optionId: string;
+  label: string;
 }
 
-export interface ToolRemoved extends PughEventBase {
-  type: 'ToolRemoved';
-  toolId: string;
+export interface OptionRemoved extends PughEventBase {
+  type: 'OptionRemoved';
+  optionId: string;
 }
 
-export interface ScoreSet extends PughEventBase {
-  type: 'ScoreSet';
-  toolId: string;
+export interface RatingAssigned extends PughEventBase {
+  type: 'RatingAssigned';
+  optionId: string;
   criterionId: string;
-  score?: number;
+  value?: number;
   /** Overrides the criterion's default label for this score value */
   label?: string;
   comment?: string;
 }
 
-export interface WeightSet extends PughEventBase {
-  type: 'WeightSet';
+export interface CriterionWeightAdjusted extends PughEventBase {
+  type: 'CriterionWeightAdjusted';
   criterionId: string;
   weight: number;
+}
+
+// --- New events ---
+
+export interface MatrixTitleChanged extends PughEventBase {
+  type: 'MatrixTitleChanged';
+  title: string;
+}
+
+export interface MatrixDescriptionChanged extends PughEventBase {
+  type: 'MatrixDescriptionChanged';
+  description: string;
+}
+
+export interface MatrixArchived extends PughEventBase {
+  type: 'MatrixArchived';
+}
+
+export interface CriterionDescriptionChanged extends PughEventBase {
+  type: 'CriterionDescriptionChanged';
+  criterionId: string;
+  description: string;
+}
+
+export interface CriterionReordered extends PughEventBase {
+  type: 'CriterionReordered';
+  criterionId: string;
+  position: number;
+}
+
+export interface OptionDescriptionChanged extends PughEventBase {
+  type: 'OptionDescriptionChanged';
+  optionId: string;
+  description: string;
+}
+
+export interface OptionReordered extends PughEventBase {
+  type: 'OptionReordered';
+  optionId: string;
+  position: number;
+}
+
+export interface RatingRemoved extends PughEventBase {
+  type: 'RatingRemoved';
+  optionId: string;
+  criterionId: string;
+}
+
+export interface CommentAdded extends PughEventBase {
+  type: 'CommentAdded';
+  optionId: string;
+  criterionId: string;
+  comment: string;
 }
 
 export type PughEvent =
   | MatrixCreated
   | MatrixDefaultScaleSet
+  | MatrixTitleChanged
+  | MatrixDescriptionChanged
+  | MatrixArchived
   | CriterionAdded
   | CriterionRenamed
   | CriterionRemoved
   | CriterionScaleOverridden
-  | ToolAdded
-  | ToolRenamed
-  | ToolRemoved
-  | ScoreSet
-  | WeightSet;
+  | CriterionDescriptionChanged
+  | CriterionReordered
+  | CriterionWeightAdjusted
+  | OptionAdded
+  | OptionRenamed
+  | OptionRemoved
+  | OptionDescriptionChanged
+  | OptionReordered
+  | RatingAssigned
+  | RatingRemoved
+  | CommentAdded;

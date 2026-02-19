@@ -1,28 +1,29 @@
 import { createStore, type StateCreator } from 'zustand/vanilla';
 import { devtools } from 'zustand/middleware';
-import type { Criterion, Tool, ScoreEntry, ScaleType } from '../types';
+import type { Criterion, Option, RatingEntry, ScaleType } from '../types';
 import { DEFAULT_SCALE, getEffectiveScale, findLabelSet, labelSetsForRange, LABELS_QUALITY_1_10, LABEL_SETS, CUSTOM_LABEL_SET_ID } from '../types';
 import type { PughStore } from './types';
 import type { PughEvent } from '../events/types';
 import type { MatrixRepository } from '../repository/types';
 import { projectEvents } from '../events/projection';
 import { seedEventsFromOptions } from '../events/seedFromLegacy';
-import { eventId } from '../ids';
+import { eventId, MAIN_BRANCH_ID } from '../ids';
 import { createMemoryRepository } from '../repository/memory';
 
 export interface CreatePughStoreOptions {
   criteria?: Criterion[];
-  tools?: Tool[];
-  scores?: ScoreEntry[];
+  options?: Option[];
+  ratings?: RatingEntry[];
   weights?: Record<string, number>;
   repository?: MatrixRepository;
 }
 
-function makeEvent(type: PughEvent['type'], payload: Record<string, unknown>): PughEvent {
+function makeEvent(type: PughEvent['type'], payload: Record<string, unknown>, branchId: string): PughEvent {
   return {
     id: eventId(),
     timestamp: Date.now(),
     user: 'anonymous',
+    branchId,
     type,
     ...payload,
   } as PughEvent;
@@ -62,13 +63,13 @@ function scaleToEditState(scale: ScaleType): {
 export function createPughStore(options: CreatePughStoreOptions = {}) {
   const {
     criteria = [],
-    tools = [],
-    scores = [],
+    options: opts = [],
+    ratings = [],
     weights = {},
     repository = createMemoryRepository(),
   } = options;
 
-  const initialEvents = seedEventsFromOptions({ criteria, tools, scores, weights });
+  const initialEvents = seedEventsFromOptions({ criteria, options: opts, ratings, weights });
   const initialDomain = projectEvents(initialEvents);
 
   let commitTimer: ReturnType<typeof setTimeout> | null = null;
@@ -302,53 +303,63 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       editCustomLabels: {},
 
       // Domain actions (thin wrappers around dispatch)
-      addScore: (entry: ScoreEntry) => {
-        get().dispatch(
-          makeEvent('ScoreSet', {
-            toolId: entry.toolId,
+      addRating: (entry: RatingEntry) => {
+        const state = get();
+        state.dispatch(
+          makeEvent('RatingAssigned', {
+            optionId: entry.optionId,
             criterionId: entry.criterionId,
-            score: entry.score,
+            value: entry.value,
             label: entry.label,
             comment: entry.comment,
             user: entry.user,
-          }),
+          }, state.activeBranch),
         );
       },
 
       setWeight: (criterionId: string, weight: number) => {
-        get().dispatch(makeEvent('WeightSet', { criterionId, weight }));
+        const state = get();
+        state.dispatch(makeEvent('CriterionWeightAdjusted', { criterionId, weight }, state.activeBranch));
       },
 
-      addTool: (id: string, label: string, user: string) => {
-        get().dispatch(makeEvent('ToolAdded', { toolId: id, label, user }));
+      addOption: (id: string, label: string, user: string) => {
+        const state = get();
+        state.dispatch(makeEvent('OptionAdded', { optionId: id, label, user }, state.activeBranch));
       },
 
-      removeTool: (id: string) => {
-        get().dispatch(makeEvent('ToolRemoved', { toolId: id }));
+      removeOption: (id: string) => {
+        const state = get();
+        state.dispatch(makeEvent('OptionRemoved', { optionId: id }, state.activeBranch));
       },
 
       addCriterion: (id: string, label: string) => {
-        get().dispatch(makeEvent('CriterionAdded', { criterionId: id, label }));
+        const state = get();
+        state.dispatch(makeEvent('CriterionAdded', { criterionId: id, label }, state.activeBranch));
       },
 
       removeCriterion: (id: string) => {
-        get().dispatch(makeEvent('CriterionRemoved', { criterionId: id }));
+        const state = get();
+        state.dispatch(makeEvent('CriterionRemoved', { criterionId: id }, state.activeBranch));
       },
 
       setCriterionScale: (id: string, scale: ScaleType) => {
-        get().dispatch(makeEvent('CriterionScaleOverridden', { criterionId: id, scale }));
+        const state = get();
+        state.dispatch(makeEvent('CriterionScaleOverridden', { criterionId: id, scale }, state.activeBranch));
       },
 
       setMatrixDefaultScale: (scale: ScaleType) => {
-        get().dispatch(makeEvent('MatrixDefaultScaleSet', { defaultScale: scale }));
+        const state = get();
+        state.dispatch(makeEvent('MatrixDefaultScaleSet', { defaultScale: scale }, state.activeBranch));
       },
 
-      renameTool: (id: string, newLabel: string) => {
-        get().dispatch(makeEvent('ToolRenamed', { toolId: id, newLabel }));
+      renameOption: (id: string, label: string) => {
+        const state = get();
+        state.dispatch(makeEvent('OptionRenamed', { optionId: id, label }, state.activeBranch));
       },
 
-      renameCriterion: (id: string, newLabel: string) => {
-        get().dispatch(makeEvent('CriterionRenamed', { criterionId: id, newLabel }));
+      renameCriterion: (id: string, label: string) => {
+        const state = get();
+        state.dispatch(makeEvent('CriterionRenamed', { criterionId: id, label }, state.activeBranch));
       },
 
       // UI actions
@@ -358,20 +369,20 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       toggleWeights: () => set((state) => ({ showWeights: !state.showWeights }), false, 'toggleWeights'),
       setShowLabels: (show: boolean) => set(() => ({ showLabels: show }), false, { type: 'setShowLabels', show }),
       toggleLabels: () => set((state) => ({ showLabels: !state.showLabels }), false, 'toggleLabels'),
-      startEditing: (toolId: string, criterionId: string) =>
+      startEditing: (optionId: string, criterionId: string) =>
         set(() => ({
-          editingCell: { toolId, criterionId },
+          editingCell: { optionId, criterionId },
           editScore: '',
           editLabel: '',
           editComment: '',
-        }), false, { type: 'startEditing', toolId, criterionId }),
+        }), false, { type: 'startEditing', optionId, criterionId }),
       cancelEditing: () => set(() => ({ editingCell: null }), false, 'cancelEditing'),
       setEditScore: (editScore: string) => set(() => ({ editScore }), false, { type: 'setEditScore', editScore }),
       setEditLabel: (editLabel: string) => set(() => ({ editLabel }), false, { type: 'setEditLabel', editLabel }),
       setEditComment: (editComment: string) => set(() => ({ editComment }), false, { type: 'setEditComment', editComment }),
-      startEditingHeader: (type: 'tool' | 'criterion', id: string) =>
+      startEditingHeader: (type: 'option' | 'criterion', id: string) =>
         set((state) => {
-          const items = type === 'tool' ? state.tools : state.criteria;
+          const items = type === 'option' ? state.options : state.criteria;
           const item = items.find((i) => i.id === id);
           let scaleState = scaleToEditState(DEFAULT_SCALE);
           let labelSetId = LABELS_QUALITY_1_10.id;
@@ -482,10 +493,10 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
         const trimmed = state.editHeaderValue.trim();
         if (!trimmed) return;
         const { type, id } = state.editingHeader;
-        if (type === 'tool') {
-          state.dispatch(makeEvent('ToolRenamed', { toolId: id, newLabel: trimmed }));
+        if (type === 'option') {
+          state.dispatch(makeEvent('OptionRenamed', { optionId: id, label: trimmed }, state.activeBranch));
         } else {
-          state.dispatch(makeEvent('CriterionRenamed', { criterionId: id, newLabel: trimmed }));
+          state.dispatch(makeEvent('CriterionRenamed', { criterionId: id, label: trimmed }, state.activeBranch));
           // Build the new scale from edit state and dispatch scale change
           let newScale: ScaleType;
           switch (state.editHeaderScaleKind) {
@@ -516,7 +527,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
               break;
             }
           }
-          state.dispatch(makeEvent('CriterionScaleOverridden', { criterionId: id, scale: newScale }));
+          state.dispatch(makeEvent('CriterionScaleOverridden', { criterionId: id, scale: newScale }, state.activeBranch));
         }
         set({ editingHeader: null, editHeaderValue: '' }, false, 'saveHeaderEdit');
       },

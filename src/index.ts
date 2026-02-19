@@ -1,6 +1,6 @@
 export { default as PughMatrix } from './PughMatrix';
 export type { PughMatrixProps } from './PughMatrix';
-export type { Criterion, Tool, ScoreEntry, ScaleType, MatrixConfig, ScoreRange, LabelSet } from './types';
+export type { Criterion, Option, RatingEntry, ScaleType, MatrixConfig, ScoreRange, LabelSet } from './types';
 export {
   DEFAULT_SCALE, DEFAULT_MATRIX_CONFIG,
   SCALE_1_10, SCALE_NEG2_POS2,
@@ -28,7 +28,7 @@ export type { PughEventStoreState, PughEventStoreActions } from './store/types';
 export { BranchSelector } from './BranchSelector';
 export type { BranchSelectorProps } from './BranchSelector';
 
-export { eventId, scoreId, toolId, criterionId, commitId } from './ids';
+export { eventId, ratingId, optionId, criterionId, commitId } from './ids';
 
 export type {
   Commit,

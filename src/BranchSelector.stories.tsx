@@ -5,7 +5,7 @@ import PughMatrix from './PughMatrix';
 import { createPughStore } from './store/createPughStore';
 import { createLocalStorageRepository } from './repository/localStorage';
 import { PughStoreProvider } from './store/PughStoreProvider';
-import { scoreId, toolId as makeToolId } from './ids';
+import { ratingId, optionId as makeOptionId } from './ids';
 import { LABELS_COST_1_10 } from './types';
 import type { ScaleType } from './types';
 import './pugh-matrix.css';
@@ -18,14 +18,14 @@ const criteria = [
   { id: 'performance', label: 'Performance', user: 'alice', scale: NUMERIC_1_10_BARE },
   { id: 'ease-of-use', label: 'Ease of Use', user: 'alice', scale: NUMERIC_1_10_BARE },
 ];
-const tools = [
+const options = [
   { id: 'react', label: 'React', user: 'alice' },
   { id: 'vue', label: 'Vue', user: 'alice' },
   { id: 'svelte', label: 'Svelte', user: 'alice' },
 ];
 
 const [costCri, perfCri, eouCri] = criteria;
-const [reactTool, vueTool, svelteTool] = tools;
+const [reactOpt, vueOpt, svelteOpt] = options;
 
 function StoryBranchSelector({
   isDark,
@@ -42,7 +42,7 @@ function StoryBranchSelector({
   const store = useMemo(() => {
     const s = createPughStore({
       criteria,
-      tools,
+      options,
       ...(persistPrefix && {
         repository: createLocalStorageRepository(persistPrefix),
       }),
@@ -52,7 +52,7 @@ function StoryBranchSelector({
       // Wait for init, then populate
       const state = () => s.getState();
 
-      // We need to add scores after init completes. Since init is async
+      // We need to add ratings after init completes. Since init is async
       // and fires in PughStoreProvider, we schedule population after init.
       const unsubscribe = s.subscribe((curr) => {
         if (!curr.isLoading && unsubscribe) {
@@ -60,25 +60,25 @@ function StoryBranchSelector({
           const t = Date.now();
 
           // -- main: moderate baseline --
-          state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: costCri.id, score: 5, timestamp: t, user: 'alice' });
-          state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: perfCri.id, score: 6, timestamp: t, user: 'alice' });
-          state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: eouCri.id, score: 5, timestamp: t, user: 'alice' });
-          state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: costCri.id, score: 6, timestamp: t, user: 'alice' });
-          state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: perfCri.id, score: 5, timestamp: t, user: 'alice' });
-          state().addScore({ id: scoreId(), toolId: vueTool.id, criterionId: eouCri.id, score: 7, timestamp: t, user: 'alice' });
-          state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: costCri.id, score: 7, timestamp: t, user: 'alice' });
-          state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: perfCri.id, score: 6, timestamp: t, user: 'alice' });
-          state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: eouCri.id, score: 5, timestamp: t, user: 'alice' });
+          state().addRating({ id: ratingId(), optionId: reactOpt.id, criterionId: costCri.id, value: 5, timestamp: t, user: 'alice' });
+          state().addRating({ id: ratingId(), optionId: reactOpt.id, criterionId: perfCri.id, value: 6, timestamp: t, user: 'alice' });
+          state().addRating({ id: ratingId(), optionId: reactOpt.id, criterionId: eouCri.id, value: 5, timestamp: t, user: 'alice' });
+          state().addRating({ id: ratingId(), optionId: vueOpt.id, criterionId: costCri.id, value: 6, timestamp: t, user: 'alice' });
+          state().addRating({ id: ratingId(), optionId: vueOpt.id, criterionId: perfCri.id, value: 5, timestamp: t, user: 'alice' });
+          state().addRating({ id: ratingId(), optionId: vueOpt.id, criterionId: eouCri.id, value: 7, timestamp: t, user: 'alice' });
+          state().addRating({ id: ratingId(), optionId: svelteOpt.id, criterionId: costCri.id, value: 7, timestamp: t, user: 'alice' });
+          state().addRating({ id: ratingId(), optionId: svelteOpt.id, criterionId: perfCri.id, value: 6, timestamp: t, user: 'alice' });
+          state().addRating({ id: ratingId(), optionId: svelteOpt.id, criterionId: eouCri.id, value: 5, timestamp: t, user: 'alice' });
 
           // -- 'pro-react': Bob loves React --
           setTimeout(() => {
             state().createBranch('pro-react');
             setTimeout(() => {
-              const angularId = makeToolId();
-              state().addTool(angularId, 'Angular', 'bob');
-              state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: costCri.id, score: 10, timestamp: t + 1, user: 'bob' });
-              state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: perfCri.id, score: 10, timestamp: t + 1, user: 'bob' });
-              state().addScore({ id: scoreId(), toolId: reactTool.id, criterionId: eouCri.id, score: 9, timestamp: t + 1, user: 'bob' });
+              const angularId = makeOptionId();
+              state().addOption(angularId, 'Angular', 'bob');
+              state().addRating({ id: ratingId(), optionId: reactOpt.id, criterionId: costCri.id, value: 10, timestamp: t + 1, user: 'bob' });
+              state().addRating({ id: ratingId(), optionId: reactOpt.id, criterionId: perfCri.id, value: 10, timestamp: t + 1, user: 'bob' });
+              state().addRating({ id: ratingId(), optionId: reactOpt.id, criterionId: eouCri.id, value: 9, timestamp: t + 1, user: 'bob' });
 
               // -- 'svelte-wins': switch back to main, then fork --
               setTimeout(() => {
@@ -86,11 +86,11 @@ function StoryBranchSelector({
                 setTimeout(() => {
                   state().createBranch('svelte-wins');
                   setTimeout(() => {
-                    state().removeTool(reactTool.id);
+                    state().removeOption(reactOpt.id);
                     state().renameCriterion(eouCri.id, 'Developer Joy');
-                    state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: costCri.id, score: 10, timestamp: t + 2, user: 'carol' });
-                    state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: perfCri.id, score: 10, timestamp: t + 2, user: 'carol' });
-                    state().addScore({ id: scoreId(), toolId: svelteTool.id, criterionId: eouCri.id, score: 10, timestamp: t + 2, user: 'carol' });
+                    state().addRating({ id: ratingId(), optionId: svelteOpt.id, criterionId: costCri.id, value: 10, timestamp: t + 2, user: 'carol' });
+                    state().addRating({ id: ratingId(), optionId: svelteOpt.id, criterionId: perfCri.id, value: 10, timestamp: t + 2, user: 'carol' });
+                    state().addRating({ id: ratingId(), optionId: svelteOpt.id, criterionId: eouCri.id, value: 10, timestamp: t + 2, user: 'carol' });
 
                     // Start on main
                     setTimeout(() => state().switchBranch('main'), 50);

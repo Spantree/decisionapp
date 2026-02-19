@@ -1,11 +1,11 @@
-import type { Criterion, Tool, ScoreEntry } from '../types';
+import type { Criterion, Option, RatingEntry } from '../types';
 import type { PughEvent } from './types';
-import { eventId } from '../ids';
+import { eventId, MAIN_BRANCH_ID } from '../ids';
 
 export interface SeedOptions {
   criteria?: Criterion[];
-  tools?: Tool[];
-  scores?: ScoreEntry[];
+  options?: Option[];
+  ratings?: RatingEntry[];
   weights?: Record<string, number>;
 }
 
@@ -22,6 +22,7 @@ export function seedEventsFromOptions(opts: SeedOptions): PughEvent[] {
       scale: c.scale,
       timestamp: now,
       user: c.user,
+      branchId: MAIN_BRANCH_ID,
     });
   }
 
@@ -31,38 +32,41 @@ export function seedEventsFromOptions(opts: SeedOptions): PughEvent[] {
       if (weight !== 10) {
         events.push({
           id: eventId(),
-          type: 'WeightSet',
+          type: 'CriterionWeightAdjusted',
           criterionId,
           weight,
           timestamp: now,
           user: 'system',
+          branchId: MAIN_BRANCH_ID,
         });
       }
     }
   }
 
-  for (const t of opts.tools ?? []) {
+  for (const t of opts.options ?? []) {
     events.push({
       id: eventId(),
-      type: 'ToolAdded',
-      toolId: t.id,
+      type: 'OptionAdded',
+      optionId: t.id,
       label: t.label,
       timestamp: now,
       user: t.user,
+      branchId: MAIN_BRANCH_ID,
     });
   }
 
-  for (const s of opts.scores ?? []) {
+  for (const s of opts.ratings ?? []) {
     events.push({
       id: eventId(),
-      type: 'ScoreSet',
-      toolId: s.toolId,
+      type: 'RatingAssigned',
+      optionId: s.optionId,
       criterionId: s.criterionId,
-      score: s.score,
+      value: s.value,
       label: s.label,
       comment: s.comment,
       timestamp: s.timestamp,
       user: s.user,
+      branchId: MAIN_BRANCH_ID,
     });
   }
 

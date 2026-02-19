@@ -226,19 +226,21 @@ export interface Criterion {
   label: string;
   user: string;
   scale?: ScaleType;  // optional; falls back to matrix default
+  description?: string;
 }
 
-export interface Tool {
+export interface Option {
   id: string;
   label: string;
   user: string;
+  description?: string;
 }
 
-export interface ScoreEntry {
+export interface RatingEntry {
   id: string;
-  toolId: string;
+  optionId: string;
   criterionId: string;
-  score?: number;
+  value?: number;
   /** Overrides the criterion's default label for this score value */
   label?: string;
   comment?: string;

@@ -1,11 +1,11 @@
-import type { ScoreEntry, ScaleType, MatrixConfig } from '../types';
+import type { RatingEntry, ScaleType, MatrixConfig } from '../types';
 import type { PughEvent } from '../events/types';
 import type { Commit, BranchDiff } from '../repository/types';
 
 export interface PughDomainState {
   criteria: import('../types').Criterion[];
-  tools: import('../types').Tool[];
-  scores: ScoreEntry[];
+  options: import('../types').Option[];
+  ratings: RatingEntry[];
   weights: Record<string, number>;
   matrixConfig: MatrixConfig;
 }
@@ -39,11 +39,11 @@ export interface PughUIState {
   showTotals: boolean;
   showWeights: boolean;
   showLabels: boolean;
-  editingCell: { toolId: string; criterionId: string } | null;
+  editingCell: { optionId: string; criterionId: string } | null;
   editScore: string;
   editLabel: string;
   editComment: string;
-  editingHeader: { type: 'tool' | 'criterion'; id: string } | null;
+  editingHeader: { type: 'option' | 'criterion'; id: string } | null;
   editHeaderValue: string;
   editHeaderScaleKind: string;
   editHeaderScaleMin: string;
@@ -55,7 +55,7 @@ export interface PughUIState {
 }
 
 export interface PughActions {
-  addScore: (entry: ScoreEntry) => void;
+  addRating: (entry: RatingEntry) => void;
   setWeight: (criterionId: string, weight: number) => void;
   setShowTotals: (show: boolean) => void;
   toggleTotals: () => void;
@@ -63,20 +63,20 @@ export interface PughActions {
   toggleWeights: () => void;
   setShowLabels: (show: boolean) => void;
   toggleLabels: () => void;
-  startEditing: (toolId: string, criterionId: string) => void;
+  startEditing: (optionId: string, criterionId: string) => void;
   cancelEditing: () => void;
   setEditScore: (score: string) => void;
   setEditLabel: (label: string) => void;
   setEditComment: (comment: string) => void;
-  renameTool: (id: string, newLabel: string) => void;
-  renameCriterion: (id: string, newLabel: string) => void;
-  addTool: (id: string, label: string, user: string) => void;
-  removeTool: (id: string) => void;
+  renameOption: (id: string, label: string) => void;
+  renameCriterion: (id: string, label: string) => void;
+  addOption: (id: string, label: string, user: string) => void;
+  removeOption: (id: string) => void;
   addCriterion: (id: string, label: string) => void;
   removeCriterion: (id: string) => void;
   setCriterionScale: (id: string, scale: ScaleType) => void;
   setMatrixDefaultScale: (scale: ScaleType) => void;
-  startEditingHeader: (type: 'tool' | 'criterion', id: string) => void;
+  startEditingHeader: (type: 'option' | 'criterion', id: string) => void;
   cancelEditingHeader: () => void;
   setEditHeaderValue: (value: string) => void;
   setEditHeaderScaleKind: (kind: string) => void;

@@ -5,9 +5,9 @@ import PughMatrix from './PughMatrix';
 import { createPughStore } from './store/createPughStore';
 import { PughStoreProvider } from './store/PughStoreProvider';
 import { createLocalStorageRepository } from './repository/localStorage';
-import { scoreId } from './ids';
+import { ratingId } from './ids';
 import './pugh-matrix.css';
-import type { Criterion, Tool, ScoreEntry, ScaleType } from './types';
+import type { Criterion, Option, RatingEntry, ScaleType } from './types';
 import { DEFAULT_SCALE, SCALE_NEG2_POS2, LABELS_COST_1_10, LABELS_COST_NEG2_POS2 } from './types';
 
 const NUMERIC_1_10: ScaleType = DEFAULT_SCALE;
@@ -26,7 +26,7 @@ const criteria: Criterion[] = [
   { id: 'community', label: 'Community Support', user: 'alice', scale: NUMERIC_1_10_BARE },
   { id: 'docs', label: 'Documentation', user: 'alice', scale: NUMERIC_1_10 },
 ];
-const tools: Tool[] = [
+const options: Option[] = [
   { id: 'react', label: 'React', user: 'alice' },
   { id: 'vue', label: 'Vue', user: 'alice' },
   { id: 'svelte', label: 'Svelte', user: 'alice' },
@@ -34,23 +34,23 @@ const tools: Tool[] = [
 ];
 
 const [costCri, perfCri, eouCri, commCri, docsCri] = criteria;
-const [reactTool, vueTool, svelteTool, angularTool] = tools;
+const [reactOpt, vueOpt, svelteOpt, angularOpt] = options;
 
 function entry(
-  toolId: string,
+  optionId: string,
   criterionId: string,
-  score: number,
+  value: number,
   timestamp: number,
   commentOrLabel?: string,
   label?: string,
-): ScoreEntry {
+): RatingEntry {
   // If both args provided: commentOrLabel is comment, label is label.
   // If only one arg: it's a comment (backward compat with existing calls).
   return {
-    id: scoreId(),
-    toolId,
+    id: ratingId(),
+    optionId,
     criterionId,
-    score,
+    value,
     comment: commentOrLabel,
     label,
     timestamp,
@@ -59,14 +59,14 @@ function entry(
 }
 
 function commentOnly(
-  toolId: string,
+  optionId: string,
   criterionId: string,
   comment: string,
   timestamp: number,
-): ScoreEntry {
+): RatingEntry {
   return {
-    id: scoreId(),
-    toolId,
+    id: ratingId(),
+    optionId,
     criterionId,
     comment,
     timestamp,
@@ -78,69 +78,69 @@ const t1 = 1707600000000; // Feb 11, 2024
 const t2 = 1707686400000; // Feb 12, 2024
 const t3 = 1707772800000; // Feb 13, 2024
 
-const scores: ScoreEntry[] = [
+const ratings: RatingEntry[] = [
   // React
-  entry(reactTool.id, costCri.id, 10, t1),
-  entry(reactTool.id, perfCri.id, 7, t1),
-  entry(reactTool.id, eouCri.id, 6, t1),
-  entry(reactTool.id, commCri.id, 10, t1),
-  entry(reactTool.id, docsCri.id, 8, t1),
+  entry(reactOpt.id, costCri.id, 10, t1),
+  entry(reactOpt.id, perfCri.id, 7, t1),
+  entry(reactOpt.id, eouCri.id, 6, t1),
+  entry(reactOpt.id, commCri.id, 10, t1),
+  entry(reactOpt.id, docsCri.id, 8, t1),
 
   // Vue
-  entry(vueTool.id, costCri.id, 10, t1),
-  entry(vueTool.id, perfCri.id, 8, t1),
-  entry(vueTool.id, eouCri.id, 9, t1),
-  entry(vueTool.id, commCri.id, 7, t1),
-  entry(vueTool.id, docsCri.id, 9, t1),
+  entry(vueOpt.id, costCri.id, 10, t1),
+  entry(vueOpt.id, perfCri.id, 8, t1),
+  entry(vueOpt.id, eouCri.id, 9, t1),
+  entry(vueOpt.id, commCri.id, 7, t1),
+  entry(vueOpt.id, docsCri.id, 9, t1),
 
   // Svelte
-  entry(svelteTool.id, costCri.id, 10, t1),
-  entry(svelteTool.id, perfCri.id, 10, t1),
-  entry(svelteTool.id, eouCri.id, 8, t1),
-  entry(svelteTool.id, commCri.id, 5, t1),
-  entry(svelteTool.id, docsCri.id, 7, t1),
+  entry(svelteOpt.id, costCri.id, 10, t1),
+  entry(svelteOpt.id, perfCri.id, 10, t1),
+  entry(svelteOpt.id, eouCri.id, 8, t1),
+  entry(svelteOpt.id, commCri.id, 5, t1),
+  entry(svelteOpt.id, docsCri.id, 7, t1),
 
   // Angular
-  entry(angularTool.id, costCri.id, 8, t1),
-  entry(angularTool.id, perfCri.id, 6, t1),
-  entry(angularTool.id, eouCri.id, 4, t1),
-  entry(angularTool.id, commCri.id, 8, t1),
-  entry(angularTool.id, docsCri.id, 8, t1),
+  entry(angularOpt.id, costCri.id, 8, t1),
+  entry(angularOpt.id, perfCri.id, 6, t1),
+  entry(angularOpt.id, eouCri.id, 4, t1),
+  entry(angularOpt.id, commCri.id, 8, t1),
+  entry(angularOpt.id, docsCri.id, 8, t1),
 ];
 
-// Scores with history: some cells have revised entries
-const scoresWithHistory: ScoreEntry[] = [
-  ...scores,
-  entry(reactTool.id, costCri.id, 7, t2, 'Hidden infra costs'),
-  entry(reactTool.id, perfCri.id, 8, t2, 'After React 19 release'),
-  entry(svelteTool.id, commCri.id, 7, t2, 'SvelteKit adoption boosted ecosystem'),
+// Ratings with history: some cells have revised entries
+const ratingsWithHistory: RatingEntry[] = [
+  ...ratings,
+  entry(reactOpt.id, costCri.id, 7, t2, 'Hidden infra costs'),
+  entry(reactOpt.id, perfCri.id, 8, t2, 'After React 19 release'),
+  entry(svelteOpt.id, commCri.id, 7, t2, 'SvelteKit adoption boosted ecosystem'),
 ];
 
-// Scores with dialog: comment-only follow-ups that don't overwrite scores
-const scoresWithDialog: ScoreEntry[] = [
-  ...scoresWithHistory,
-  commentOnly(reactTool.id, costCri.id, 'But what about hosting?', t3),
-  commentOnly(reactTool.id, costCri.id, 'Vercel free tier covers most use cases', t3 + 1000),
-  commentOnly(vueTool.id, eouCri.id, 'Composition API has a learning curve though', t3),
+// Ratings with dialog: comment-only follow-ups that don't overwrite scores
+const ratingsWithDialog: RatingEntry[] = [
+  ...ratingsWithHistory,
+  commentOnly(reactOpt.id, costCri.id, 'But what about hosting?', t3),
+  commentOnly(reactOpt.id, costCri.id, 'Vercel free tier covers most use cases', t3 + 1000),
+  commentOnly(vueOpt.id, eouCri.id, 'Composition API has a learning curve though', t3),
 ];
 
 /** Helper: wraps PughMatrix in a store provider for each story. */
 function StoryMatrix({
-  scores: storyScores = scores,
+  ratings: storyRatings = ratings,
   highlight,
   showWinner,
   isDark,
   readOnly,
 }: {
-  scores?: ScoreEntry[];
+  ratings?: RatingEntry[];
   highlight?: string;
   showWinner?: boolean;
   isDark?: boolean;
   readOnly?: boolean;
 }) {
   const store = useMemo(
-    () => createPughStore({ criteria, tools, scores: storyScores }),
-    [storyScores],
+    () => createPughStore({ criteria, options, ratings: storyRatings }),
+    [storyRatings],
   );
   return (
     <PughStoreProvider store={store}>
@@ -155,8 +155,8 @@ const meta: Meta<typeof StoryMatrix> = {
   argTypes: {
     highlight: {
       control: 'select',
-      options: [undefined, ...tools.map((t) => t.id)],
-      description: 'Tool ID to visually highlight a column',
+      options: [undefined, ...options.map((t) => t.id)],
+      description: 'Option ID to visually highlight a column',
     },
     showWinner: {
       control: 'boolean',
@@ -191,14 +191,14 @@ export const WithTotals: Story = {
 /** A single column highlighted with the `highlight` prop. */
 export const HighlightVue: Story = {
   args: {
-    highlight: vueTool.id,
+    highlight: vueOpt.id,
   },
 };
 
 /** Highlighting a different column for comparison. */
 export const HighlightSvelte: Story = {
   args: {
-    highlight: svelteTool.id,
+    highlight: svelteOpt.id,
   },
 };
 
@@ -216,7 +216,7 @@ export const DarkMode: Story = {
 export const DarkModeWithHighlight: Story = {
   args: {
     isDark: true,
-    highlight: reactTool.id,
+    highlight: reactOpt.id,
   },
   parameters: {
     backgrounds: { default: 'dark' },
@@ -234,7 +234,7 @@ export const ShowWinner: Story = {
 export const WinnerWithHighlight: Story = {
   args: {
     showWinner: true,
-    highlight: angularTool.id,
+    highlight: angularOpt.id,
   },
 };
 
@@ -249,17 +249,17 @@ export const WinnerDarkMode: Story = {
   },
 };
 
-/** Cells with score history — hover a cell to see previous scores in a tooltip. */
+/** Cells with rating history — hover a cell to see previous ratings in a tooltip. */
 export const WithScoreHistory: Story = {
   args: {
-    scores: scoresWithHistory,
+    ratings: ratingsWithHistory,
   },
 };
 
 /** Cells with comment-only follow-ups — the score persists while a dialog appears in hover history. */
 export const WithDialog: Story = {
   args: {
-    scores: scoresWithDialog,
+    ratings: ratingsWithDialog,
   },
 };
 
@@ -280,26 +280,26 @@ const criteriaNeg2: Criterion[] = [
   { id: 'ease-of-use', label: 'Ease of Use', user: 'alice', scale: NUMERIC_NEG2_POS2_BARE },
 ];
 
-const scoresNeg2: ScoreEntry[] = [
-  entry(reactTool.id, 'cost', 2, t1),
-  entry(reactTool.id, 'performance', 1, t1),
-  entry(reactTool.id, 'ease-of-use', 0, t1),
-  entry(vueTool.id, 'cost', 1, t1),
-  entry(vueTool.id, 'performance', 2, t1),
-  entry(vueTool.id, 'ease-of-use', 1, t1),
-  entry(svelteTool.id, 'cost', -1, t1),
-  entry(svelteTool.id, 'performance', 2, t1),
-  entry(svelteTool.id, 'ease-of-use', -2, t1),
-  entry(angularTool.id, 'cost', 0, t1),
-  entry(angularTool.id, 'performance', -1, t1),
-  entry(angularTool.id, 'ease-of-use', -1, t1),
+const ratingsNeg2: RatingEntry[] = [
+  entry(reactOpt.id, 'cost', 2, t1),
+  entry(reactOpt.id, 'performance', 1, t1),
+  entry(reactOpt.id, 'ease-of-use', 0, t1),
+  entry(vueOpt.id, 'cost', 1, t1),
+  entry(vueOpt.id, 'performance', 2, t1),
+  entry(vueOpt.id, 'ease-of-use', 1, t1),
+  entry(svelteOpt.id, 'cost', -1, t1),
+  entry(svelteOpt.id, 'performance', 2, t1),
+  entry(svelteOpt.id, 'ease-of-use', -2, t1),
+  entry(angularOpt.id, 'cost', 0, t1),
+  entry(angularOpt.id, 'performance', -1, t1),
+  entry(angularOpt.id, 'ease-of-use', -1, t1),
 ];
 
 /** Criteria using the -2 to +2 scale. */
 export const Neg2ToPos2Scale: Story = {
   render: () => {
     const store = useMemo(
-      () => createPughStore({ criteria: criteriaNeg2, tools, scores: scoresNeg2 }),
+      () => createPughStore({ criteria: criteriaNeg2, options, ratings: ratingsNeg2 }),
       [],
     );
     return (
@@ -327,8 +327,8 @@ export const WithLocalStorage: Story = {
       () =>
         createPughStore({
           criteria,
-          tools,
-          scores: scoresWithHistory,
+          options,
+          ratings: ratingsWithHistory,
           repository: createLocalStorageRepository(PERSIST_PREFIX),
         }),
       [resetKey],
@@ -377,31 +377,31 @@ const criteriaUnbounded: Criterion[] = [
   { id: 'bundle', label: 'Bundle Size (KB)', user: 'alice', scale: UNBOUNDED },
 ];
 
-const scoresUnbounded: ScoreEntry[] = [
+const ratingsUnbounded: RatingEntry[] = [
   // GitHub Stars
-  entry(reactTool.id, 'stars', 228000, t1),
-  entry(vueTool.id, 'stars', 208000, t1),
-  entry(svelteTool.id, 'stars', 80000, t1),
-  entry(angularTool.id, 'stars', 96000, t1),
+  entry(reactOpt.id, 'stars', 228000, t1),
+  entry(vueOpt.id, 'stars', 208000, t1),
+  entry(svelteOpt.id, 'stars', 80000, t1),
+  entry(angularOpt.id, 'stars', 96000, t1),
 
   // npm Weekly Downloads
-  entry(reactTool.id, 'downloads', 25000000, t1),
-  entry(vueTool.id, 'downloads', 4500000, t1),
-  entry(svelteTool.id, 'downloads', 900000, t1),
-  entry(angularTool.id, 'downloads', 3200000, t1),
+  entry(reactOpt.id, 'downloads', 25000000, t1),
+  entry(vueOpt.id, 'downloads', 4500000, t1),
+  entry(svelteOpt.id, 'downloads', 900000, t1),
+  entry(angularOpt.id, 'downloads', 3200000, t1),
 
   // Bundle Size (KB)
-  entry(reactTool.id, 'bundle', 42, t1),
-  entry(vueTool.id, 'bundle', 33, t1),
-  entry(svelteTool.id, 'bundle', 2, t1),
-  entry(angularTool.id, 'bundle', 143, t1),
+  entry(reactOpt.id, 'bundle', 42, t1),
+  entry(vueOpt.id, 'bundle', 33, t1),
+  entry(svelteOpt.id, 'bundle', 2, t1),
+  entry(angularOpt.id, 'bundle', 143, t1),
 ];
 
 /** Unbounded scale — raw counts normalized at display time; share of total shown as %. */
 export const UnboundedScale: Story = {
   render: () => {
     const store = useMemo(
-      () => createPughStore({ criteria: criteriaUnbounded, tools, scores: scoresUnbounded }),
+      () => createPughStore({ criteria: criteriaUnbounded, options, ratings: ratingsUnbounded }),
       [],
     );
     return (
@@ -423,33 +423,33 @@ const criteriaBinary: Criterion[] = [
   { id: 'oss', label: 'Open Source', user: 'alice', scale: BINARY },
 ];
 
-const scoresBinary: ScoreEntry[] = [
-  entry(reactTool.id, 'ssr', 1, t1),
-  entry(reactTool.id, 'typescript', 0, t1),
-  entry(reactTool.id, 'mobile', 1, t1),
-  entry(reactTool.id, 'oss', 1, t1),
+const ratingsBinary: RatingEntry[] = [
+  entry(reactOpt.id, 'ssr', 1, t1),
+  entry(reactOpt.id, 'typescript', 0, t1),
+  entry(reactOpt.id, 'mobile', 1, t1),
+  entry(reactOpt.id, 'oss', 1, t1),
 
-  entry(vueTool.id, 'ssr', 1, t1),
-  entry(vueTool.id, 'typescript', 0, t1),
-  entry(vueTool.id, 'mobile', 0, t1),
-  entry(vueTool.id, 'oss', 1, t1),
+  entry(vueOpt.id, 'ssr', 1, t1),
+  entry(vueOpt.id, 'typescript', 0, t1),
+  entry(vueOpt.id, 'mobile', 0, t1),
+  entry(vueOpt.id, 'oss', 1, t1),
 
-  entry(svelteTool.id, 'ssr', 1, t1),
-  entry(svelteTool.id, 'typescript', 1, t1),
-  entry(svelteTool.id, 'mobile', 0, t1),
-  entry(svelteTool.id, 'oss', 1, t1),
+  entry(svelteOpt.id, 'ssr', 1, t1),
+  entry(svelteOpt.id, 'typescript', 1, t1),
+  entry(svelteOpt.id, 'mobile', 0, t1),
+  entry(svelteOpt.id, 'oss', 1, t1),
 
-  entry(angularTool.id, 'ssr', 1, t1),
-  entry(angularTool.id, 'typescript', 1, t1),
-  entry(angularTool.id, 'mobile', 1, t1),
-  entry(angularTool.id, 'oss', 1, t1),
+  entry(angularOpt.id, 'ssr', 1, t1),
+  entry(angularOpt.id, 'typescript', 1, t1),
+  entry(angularOpt.id, 'mobile', 1, t1),
+  entry(angularOpt.id, 'oss', 1, t1),
 ];
 
 /** Binary scale — yes/no criteria scored as 1/0. */
 export const BinaryScale: Story = {
   render: () => {
     const store = useMemo(
-      () => createPughStore({ criteria: criteriaBinary, tools, scores: scoresBinary }),
+      () => createPughStore({ criteria: criteriaBinary, options, ratings: ratingsBinary }),
       [],
     );
     return (
@@ -472,22 +472,22 @@ const criteriaDecimal: Criterion[] = [
   { id: 'latency', label: 'Latency Score (0-10)', user: 'alice', scale: TENTH_STEP },
 ];
 
-const scoresDecimal: ScoreEntry[] = [
-  entry(reactTool.id, 'rating', 4.5, t1),
-  entry(reactTool.id, 'latency', 7.3, t1),
-  entry(vueTool.id, 'rating', 4.0, t1),
-  entry(vueTool.id, 'latency', 8.1, t1),
-  entry(svelteTool.id, 'rating', 5.0, t1),
-  entry(svelteTool.id, 'latency', 9.2, t1),
-  entry(angularTool.id, 'rating', 3.5, t1),
-  entry(angularTool.id, 'latency', 6.5, t1),
+const ratingsDecimal: RatingEntry[] = [
+  entry(reactOpt.id, 'rating', 4.5, t1),
+  entry(reactOpt.id, 'latency', 7.3, t1),
+  entry(vueOpt.id, 'rating', 4.0, t1),
+  entry(vueOpt.id, 'latency', 8.1, t1),
+  entry(svelteOpt.id, 'rating', 5.0, t1),
+  entry(svelteOpt.id, 'latency', 9.2, t1),
+  entry(angularOpt.id, 'rating', 3.5, t1),
+  entry(angularOpt.id, 'latency', 6.5, t1),
 ];
 
 /** Decimal step scales — criteria with step 0.5 and step 0.1. */
 export const DecimalStep: Story = {
   render: () => {
     const store = useMemo(
-      () => createPughStore({ criteria: criteriaDecimal, tools, scores: scoresDecimal }),
+      () => createPughStore({ criteria: criteriaDecimal, options, ratings: ratingsDecimal }),
       [],
     );
     return (
@@ -509,33 +509,33 @@ const criteriaMixed: Criterion[] = [
   { id: 'rating', label: 'User Rating (0-5)', user: 'alice', scale: HALF_STEP },
 ];
 
-const scoresMixed: ScoreEntry[] = [
-  entry(reactTool.id, 'cost', 10, t1),
-  entry(reactTool.id, 'ssr', 1, t1),
-  entry(reactTool.id, 'stars', 228000, t1),
-  entry(reactTool.id, 'rating', 4.5, t1),
+const ratingsMixed: RatingEntry[] = [
+  entry(reactOpt.id, 'cost', 10, t1),
+  entry(reactOpt.id, 'ssr', 1, t1),
+  entry(reactOpt.id, 'stars', 228000, t1),
+  entry(reactOpt.id, 'rating', 4.5, t1),
 
-  entry(vueTool.id, 'cost', 10, t1),
-  entry(vueTool.id, 'ssr', 1, t1),
-  entry(vueTool.id, 'stars', 208000, t1),
-  entry(vueTool.id, 'rating', 4.0, t1),
+  entry(vueOpt.id, 'cost', 10, t1),
+  entry(vueOpt.id, 'ssr', 1, t1),
+  entry(vueOpt.id, 'stars', 208000, t1),
+  entry(vueOpt.id, 'rating', 4.0, t1),
 
-  entry(svelteTool.id, 'cost', 10, t1),
-  entry(svelteTool.id, 'ssr', 1, t1),
-  entry(svelteTool.id, 'stars', 80000, t1),
-  entry(svelteTool.id, 'rating', 5.0, t1),
+  entry(svelteOpt.id, 'cost', 10, t1),
+  entry(svelteOpt.id, 'ssr', 1, t1),
+  entry(svelteOpt.id, 'stars', 80000, t1),
+  entry(svelteOpt.id, 'rating', 5.0, t1),
 
-  entry(angularTool.id, 'cost', 8, t1),
-  entry(angularTool.id, 'ssr', 1, t1),
-  entry(angularTool.id, 'stars', 96000, t1),
-  entry(angularTool.id, 'rating', 3.5, t1),
+  entry(angularOpt.id, 'cost', 8, t1),
+  entry(angularOpt.id, 'ssr', 1, t1),
+  entry(angularOpt.id, 'stars', 96000, t1),
+  entry(angularOpt.id, 'rating', 3.5, t1),
 ];
 
 /** Mixed scales — matrix combining numeric, binary, unbounded, and decimal criteria. */
 export const MixedScales: Story = {
   render: () => {
     const store = useMemo(
-      () => createPughStore({ criteria: criteriaMixed, tools, scores: scoresMixed }),
+      () => createPughStore({ criteria: criteriaMixed, options, ratings: ratingsMixed }),
       [],
     );
     return (
@@ -558,22 +558,22 @@ const criteriaSigned: Criterion[] = [
   { id: 'effort', label: 'Effort', user: 'alice', scale: SIGNED_NEG5_POS5 },
 ];
 
-const scoresSigned: ScoreEntry[] = [
-  entry(reactTool.id, 'impact', 4, t1),
-  entry(reactTool.id, 'risk', -2, t1),
-  entry(reactTool.id, 'effort', -1, t1),
+const ratingsSigned: RatingEntry[] = [
+  entry(reactOpt.id, 'impact', 4, t1),
+  entry(reactOpt.id, 'risk', -2, t1),
+  entry(reactOpt.id, 'effort', -1, t1),
 
-  entry(vueTool.id, 'impact', 3, t1),
-  entry(vueTool.id, 'risk', 1, t1),
-  entry(vueTool.id, 'effort', 2, t1),
+  entry(vueOpt.id, 'impact', 3, t1),
+  entry(vueOpt.id, 'risk', 1, t1),
+  entry(vueOpt.id, 'effort', 2, t1),
 
-  entry(svelteTool.id, 'impact', 5, t1),
-  entry(svelteTool.id, 'risk', -3, t1),
-  entry(svelteTool.id, 'effort', -4, t1),
+  entry(svelteOpt.id, 'impact', 5, t1),
+  entry(svelteOpt.id, 'risk', -3, t1),
+  entry(svelteOpt.id, 'effort', -4, t1),
 
-  entry(angularTool.id, 'impact', 0, t1),
-  entry(angularTool.id, 'risk', -5, t1),
-  entry(angularTool.id, 'effort', 3, t1),
+  entry(angularOpt.id, 'impact', 0, t1),
+  entry(angularOpt.id, 'risk', -5, t1),
+  entry(angularOpt.id, 'effort', 3, t1),
 ];
 
 /** Signed scale — matrix with allowNegative and -5 to +5 range. Negative=red, zero=yellow, positive=green. */
@@ -581,7 +581,7 @@ export const SignedScale: Story = {
   render: () => {
     // We need to create a store and manually dispatch MatrixCreated to set allowNegative
     const store = useMemo(() => {
-      const s = createPughStore({ criteria: criteriaSigned, tools, scores: scoresSigned });
+      const s = createPughStore({ criteria: criteriaSigned, options, ratings: ratingsSigned });
       // Dispatch a MatrixDefaultScaleSet is not needed since criteria have explicit scales.
       // We need to set allowNegative. We'll dispatch a MatrixCreated event.
       s.getState().dispatch({
@@ -592,6 +592,7 @@ export const SignedScale: Story = {
         defaultScale: SIGNED_NEG5_POS5,
         timestamp: Date.now(),
         user: 'system',
+        branchId: 'main',
       });
       return s;
     }, []);

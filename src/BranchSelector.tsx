@@ -7,25 +7,43 @@ function describeEvent(event: PughEvent): string {
     case 'CriterionAdded':
       return `Added criterion "${event.label}"`;
     case 'CriterionRenamed':
-      return `Renamed criterion to "${event.newLabel}"`;
+      return `Renamed criterion to "${event.label}"`;
     case 'CriterionRemoved':
       return `Removed criterion`;
-    case 'ToolAdded':
-      return `Added tool "${event.label}"`;
-    case 'ToolRenamed':
-      return `Renamed tool to "${event.newLabel}"`;
-    case 'ToolRemoved':
-      return `Removed tool`;
-    case 'ScoreSet':
-      return event.label ? `Set score: ${event.label}` : event.score != null ? `Set score: ${event.score}` : 'Set score';
-    case 'WeightSet':
-      return `Set weight to ${event.weight}`;
     case 'CriterionScaleOverridden':
       return `Changed scale for criterion`;
+    case 'CriterionDescriptionChanged':
+      return `Changed criterion description`;
+    case 'CriterionReordered':
+      return `Reordered criterion to position ${event.position}`;
+    case 'CriterionWeightAdjusted':
+      return `Set weight to ${event.weight}`;
+    case 'OptionAdded':
+      return `Added option "${event.label}"`;
+    case 'OptionRenamed':
+      return `Renamed option to "${event.label}"`;
+    case 'OptionRemoved':
+      return `Removed option`;
+    case 'OptionDescriptionChanged':
+      return `Changed option description`;
+    case 'OptionReordered':
+      return `Reordered option to position ${event.position}`;
+    case 'RatingAssigned':
+      return event.label ? `Rated: ${event.label}` : event.value != null ? `Rated: ${event.value}` : 'Rated';
+    case 'RatingRemoved':
+      return `Removed rating`;
+    case 'CommentAdded':
+      return `Added comment`;
     case 'MatrixCreated':
       return `Created matrix "${event.title}"`;
     case 'MatrixDefaultScaleSet':
       return `Changed default scale`;
+    case 'MatrixTitleChanged':
+      return `Changed title to "${event.title}"`;
+    case 'MatrixDescriptionChanged':
+      return `Changed description`;
+    case 'MatrixArchived':
+      return `Archived matrix`;
   }
 }
 

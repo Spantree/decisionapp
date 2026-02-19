@@ -5,8 +5,8 @@ import type { MatrixConfig } from '../types';
 
 export function projectEvents(events: PughEvent[]): PughDomainState {
   const criteria: PughDomainState['criteria'] = [];
-  const tools: PughDomainState['tools'] = [];
-  const scores: PughDomainState['scores'] = [];
+  const options: PughDomainState['options'] = [];
+  const ratings: PughDomainState['ratings'] = [];
   const weights: Record<string, number> = {};
   let matrixConfig: MatrixConfig = { ...DEFAULT_MATRIX_CONFIG };
 
@@ -23,6 +23,12 @@ export function projectEvents(events: PughEvent[]): PughDomainState {
         matrixConfig = { ...matrixConfig, defaultScale: event.defaultScale };
         break;
 
+      case 'MatrixTitleChanged':
+      case 'MatrixDescriptionChanged':
+      case 'MatrixArchived':
+        // no-op: current state doesn't track these
+        break;
+
       case 'CriterionAdded':
         criteria.push({
           id: event.criterionId,
@@ -36,7 +42,7 @@ export function projectEvents(events: PughEvent[]): PughDomainState {
       case 'CriterionRenamed':
         for (let i = 0; i < criteria.length; i++) {
           if (criteria[i].id === event.criterionId) {
-            criteria[i] = { ...criteria[i], label: event.newLabel };
+            criteria[i] = { ...criteria[i], label: event.label };
             break;
           }
         }
@@ -51,46 +57,86 @@ export function projectEvents(events: PughEvent[]): PughDomainState {
         }
         break;
 
-      case 'CriterionRemoved': {
-        const idx = criteria.findIndex((c) => c.id === event.criterionId);
-        if (idx !== -1) criteria.splice(idx, 1);
-        delete weights[event.criterionId];
-        // Remove scores referencing this criterion
-        for (let i = scores.length - 1; i >= 0; i--) {
-          if (scores[i].criterionId === event.criterionId) scores.splice(i, 1);
-        }
-        break;
-      }
-
-      case 'ToolAdded':
-        tools.push({ id: event.toolId, label: event.label, user: event.user });
-        break;
-
-      case 'ToolRenamed':
-        for (let i = 0; i < tools.length; i++) {
-          if (tools[i].id === event.toolId) {
-            tools[i] = { ...tools[i], label: event.newLabel };
+      case 'CriterionDescriptionChanged':
+        for (let i = 0; i < criteria.length; i++) {
+          if (criteria[i].id === event.criterionId) {
+            criteria[i] = { ...criteria[i], description: event.description };
             break;
           }
         }
         break;
 
-      case 'ToolRemoved': {
-        const idx = tools.findIndex((t) => t.id === event.toolId);
-        if (idx !== -1) tools.splice(idx, 1);
-        // Remove scores referencing this tool
-        for (let i = scores.length - 1; i >= 0; i--) {
-          if (scores[i].toolId === event.toolId) scores.splice(i, 1);
+      case 'CriterionReordered': {
+        const critIdx = criteria.findIndex((c) => c.id === event.criterionId);
+        if (critIdx !== -1) {
+          const [item] = criteria.splice(critIdx, 1);
+          criteria.splice(event.position, 0, item);
         }
         break;
       }
 
-      case 'ScoreSet':
-        scores.push({
+      case 'CriterionRemoved': {
+        const idx = criteria.findIndex((c) => c.id === event.criterionId);
+        if (idx !== -1) criteria.splice(idx, 1);
+        delete weights[event.criterionId];
+        // Remove ratings referencing this criterion
+        for (let i = ratings.length - 1; i >= 0; i--) {
+          if (ratings[i].criterionId === event.criterionId) ratings.splice(i, 1);
+        }
+        break;
+      }
+
+      case 'CriterionWeightAdjusted':
+        weights[event.criterionId] = event.weight;
+        break;
+
+      case 'OptionAdded':
+        options.push({ id: event.optionId, label: event.label, user: event.user });
+        break;
+
+      case 'OptionRenamed':
+        for (let i = 0; i < options.length; i++) {
+          if (options[i].id === event.optionId) {
+            options[i] = { ...options[i], label: event.label };
+            break;
+          }
+        }
+        break;
+
+      case 'OptionDescriptionChanged':
+        for (let i = 0; i < options.length; i++) {
+          if (options[i].id === event.optionId) {
+            options[i] = { ...options[i], description: event.description };
+            break;
+          }
+        }
+        break;
+
+      case 'OptionReordered': {
+        const optIdx = options.findIndex((o) => o.id === event.optionId);
+        if (optIdx !== -1) {
+          const [item] = options.splice(optIdx, 1);
+          options.splice(event.position, 0, item);
+        }
+        break;
+      }
+
+      case 'OptionRemoved': {
+        const idx = options.findIndex((t) => t.id === event.optionId);
+        if (idx !== -1) options.splice(idx, 1);
+        // Remove ratings referencing this option
+        for (let i = ratings.length - 1; i >= 0; i--) {
+          if (ratings[i].optionId === event.optionId) ratings.splice(i, 1);
+        }
+        break;
+      }
+
+      case 'RatingAssigned':
+        ratings.push({
           id: event.id,
-          toolId: event.toolId,
+          optionId: event.optionId,
           criterionId: event.criterionId,
-          score: event.score,
+          value: event.value,
           label: event.label,
           comment: event.comment,
           timestamp: event.timestamp,
@@ -98,11 +144,32 @@ export function projectEvents(events: PughEvent[]): PughDomainState {
         });
         break;
 
-      case 'WeightSet':
-        weights[event.criterionId] = event.weight;
+      case 'RatingRemoved':
+        for (let i = ratings.length - 1; i >= 0; i--) {
+          if (ratings[i].optionId === event.optionId && ratings[i].criterionId === event.criterionId) {
+            ratings.splice(i, 1);
+          }
+        }
         break;
+
+      case 'CommentAdded':
+        ratings.push({
+          id: event.id,
+          optionId: event.optionId,
+          criterionId: event.criterionId,
+          value: undefined,
+          comment: event.comment,
+          timestamp: event.timestamp,
+          user: event.user,
+        });
+        break;
+
+      default: {
+        const _exhaustive: never = event;
+        void _exhaustive;
+      }
     }
   }
 
-  return { criteria, tools, scores, weights, matrixConfig };
+  return { criteria, options, ratings, weights, matrixConfig };
 }

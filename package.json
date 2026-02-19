@@ -67,6 +67,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "uuidv7": "^1.1.0",
     "zustand": "^5.0.11"
   }
 }

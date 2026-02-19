@@ -14,5 +14,8 @@
 * [ADR-0010](0010-domain-naming-option-and-rating.md) - Standardize Domain Naming: Tool to Option, Score to Rating
 * [ADR-0011](0011-lazy-loaded-radar-chart.md) - Lazy-Loaded Radar Chart with Recharts
 * [ADR-0012](0012-stale-data-auto-recovery.md) - Auto-Detect Stale Stored Data and Re-Seed
+* [ADR-0013](0013-table-layout-drawer-and-mobile-read-only.md) - Fixed-Width Columns, Drawer UI, and Mobile Read-Only
 
 <!-- adrlogstop -->
+
+

@@ -1,4 +1,4 @@
-export type { PughDomainState, PughUIState, PughActions, PughStore, PughEventStoreState, PughEventStoreActions } from './types';
+export type { PughDomainState, PughUIState, PughActions, PughStore, PughView, PughEventStoreState, PughEventStoreActions } from './types';
 export { createPughStore } from './createPughStore';
 export type { CreatePughStoreOptions, PughStoreInstance } from './createPughStore';
 export { PughStoreContext, usePughStore } from './usePughStore';

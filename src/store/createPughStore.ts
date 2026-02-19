@@ -299,6 +299,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       },
 
       // UI state
+      view: 'table' as const,
       showTotals: false,
       showWeights: false,
       showLabels: false,
@@ -385,6 +386,8 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       toggleWeights: () => set((state) => ({ showWeights: !state.showWeights }), false, 'toggleWeights'),
       setShowLabels: (show: boolean) => set(() => ({ showLabels: show }), false, { type: 'setShowLabels', show }),
       toggleLabels: () => set((state) => ({ showLabels: !state.showLabels }), false, 'toggleLabels'),
+      setView: (view) => set(() => ({ view }), false, { type: 'setView', view }),
+      toggleView: () => set((state) => ({ view: state.view === 'table' ? 'chart' : 'table' }), false, 'toggleView'),
       startEditing: (optionId: string, criterionId: string) =>
         set(() => ({
           editingCell: { optionId, criterionId },

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Dialog, HoverCard, Table, Theme } from '@radix-ui/themes';
 import {
   red, tomato, amber, yellow, lime, grass, green,
@@ -9,6 +9,7 @@ import { getEffectiveScale, normalizeScore, getScoreColor, formatCount, labelSet
 import Markdown from './Markdown';
 import { usePughStore } from './store/usePughStore';
 import { ratingId, optionId, criterionId } from './ids';
+const PughRadarChart = lazy(() => import('./PughRadarChart'));
 import './pugh-matrix.css';
 
 function useIsMobile(): boolean {
@@ -155,6 +156,8 @@ export default function PughMatrix({
   const removeOption = usePughStore((s) => s.removeOption);
   const addCriterion = usePughStore((s) => s.addCriterion);
   const removeCriterion = usePughStore((s) => s.removeCriterion);
+  const view = usePughStore((s) => s.view);
+  const toggleView = usePughStore((s) => s.toggleView);
   const editingHeader = usePughStore((s) => s.editingHeader);
   const editHeaderValue = usePughStore((s) => s.editHeaderValue);
   const startEditingHeader = usePughStore((s) => s.startEditingHeader);
@@ -488,6 +491,11 @@ export default function PughMatrix({
   return (
     <Theme appearance={isDark ? 'dark' : 'light'} accentColor="green" hasBackground={false}>
       <div className={`pugh-container${isDark ? ' pugh-dark' : ''}`}>
+        {view === 'chart' ? (
+          <Suspense fallback={null}>
+            <PughRadarChart isDark={isDark} />
+          </Suspense>
+        ) : (
         <Table.Root variant="surface" size="2">
           <Table.Header>
             <Table.Row>
@@ -624,7 +632,8 @@ export default function PughMatrix({
                           <label>
                             Min
                             <input
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
                               aria-label={`Scale min for ${criterion.label}`}
                               className="pugh-scale-input"
                               value={editHeaderScaleMin}
@@ -634,7 +643,8 @@ export default function PughMatrix({
                           <label>
                             Max
                             <input
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
                               aria-label={`Scale max for ${criterion.label}`}
                               className="pugh-scale-input"
                               value={editHeaderScaleMax}
@@ -644,13 +654,12 @@ export default function PughMatrix({
                           <label>
                             Step
                             <input
-                              type="number"
+                              type="text"
+                              inputMode="decimal"
                               aria-label={`Scale step for ${criterion.label}`}
                               className="pugh-scale-input"
                               value={editHeaderScaleStep}
                               onChange={(e) => setEditHeaderScaleStep(e.target.value)}
-                              min="0.01"
-                              step="any"
                             />
                           </label>
                         </div>
@@ -913,29 +922,41 @@ export default function PughMatrix({
             )}
           </Table.Body>
         </Table.Root>
+        )}
         {!effectiveReadOnly && (
           <>
             <button
               className="pugh-toggle-button"
-              onClick={toggleWeights}
+              onClick={toggleView}
               type="button"
             >
-              {showWeights ? 'Hide Weights' : 'Show Weights'}
+              {view === 'table' ? 'Show Chart' : 'Show Table'}
             </button>
-            <button
-              className="pugh-toggle-button"
-              onClick={toggleTotals}
-              type="button"
-            >
-              {showTotals ? 'Hide Totals' : 'Show Totals'}
-            </button>
-            <button
-              className="pugh-toggle-button"
-              onClick={toggleLabels}
-              type="button"
-            >
-              {showLabels ? 'Hide Labels' : 'Show Labels'}
-            </button>
+            {view === 'table' && (
+              <>
+                <button
+                  className="pugh-toggle-button"
+                  onClick={toggleWeights}
+                  type="button"
+                >
+                  {showWeights ? 'Hide Weights' : 'Show Weights'}
+                </button>
+                <button
+                  className="pugh-toggle-button"
+                  onClick={toggleTotals}
+                  type="button"
+                >
+                  {showTotals ? 'Hide Totals' : 'Show Totals'}
+                </button>
+                <button
+                  className="pugh-toggle-button"
+                  onClick={toggleLabels}
+                  type="button"
+                >
+                  {showLabels ? 'Hide Labels' : 'Show Labels'}
+                </button>
+              </>
+            )}
           </>
         )}
         <Dialog.Root open={customLabelDrawerOpen} onOpenChange={(open) => { if (!open) setCustomLabelDrawerOpen(false); }}>

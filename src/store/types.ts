@@ -35,7 +35,10 @@ export interface PughEventStoreActions {
   mergeBranch: (sourceBranch: string) => void;
 }
 
+export type PughView = 'table' | 'chart';
+
 export interface PughUIState {
+  view: PughView;
   showTotals: boolean;
   showWeights: boolean;
   showLabels: boolean;
@@ -65,6 +68,8 @@ export interface PughActions {
   toggleWeights: () => void;
   setShowLabels: (show: boolean) => void;
   toggleLabels: () => void;
+  setView: (view: PughView) => void;
+  toggleView: () => void;
   startEditing: (optionId: string, criterionId: string) => void;
   cancelEditing: () => void;
   setEditScore: (score: string) => void;

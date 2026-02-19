@@ -1,5 +1,7 @@
 export { default as PughMatrix } from './PughMatrix';
 export type { PughMatrixProps } from './PughMatrix';
+export { default as PughRadarChart } from './PughRadarChart';
+export type { PughRadarChartProps } from './PughRadarChart';
 export type { Criterion, Option, RatingEntry, ScaleType, MatrixConfig, ScoreRange, LabelSet } from './types';
 export {
   DEFAULT_SCALE, DEFAULT_MATRIX_CONFIG,
@@ -19,7 +21,7 @@ export {
 export { createPughStore } from './store';
 export type { CreatePughStoreOptions, PughStoreInstance } from './store';
 export { PughStoreProvider, PughStoreContext, usePughStore } from './store';
-export type { PughStoreProviderProps, PughDomainState, PughUIState, PughActions, PughStore } from './store';
+export type { PughStoreProviderProps, PughDomainState, PughUIState, PughActions, PughStore, PughView } from './store';
 
 export type { PughEvent } from './events';
 export { projectEvents, seedEventsFromOptions } from './events';

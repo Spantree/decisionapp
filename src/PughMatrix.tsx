@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Dialog, HoverCard, Table, Theme } from '@radix-ui/themes';
 import {
   red, tomato, amber, yellow, lime, grass, green,
@@ -9,6 +9,7 @@ import { getEffectiveScale, normalizeScore, getScoreColor, formatCount, labelSet
 import Markdown from './Markdown';
 import { usePughStore } from './store/usePughStore';
 import { ratingId, optionId, criterionId } from './ids';
+const PughRadarChart = lazy(() => import('./PughRadarChart'));
 import './pugh-matrix.css';
 
 function useIsMobile(): boolean {
@@ -155,6 +156,8 @@ export default function PughMatrix({
   const removeOption = usePughStore((s) => s.removeOption);
   const addCriterion = usePughStore((s) => s.addCriterion);
   const removeCriterion = usePughStore((s) => s.removeCriterion);
+  const view = usePughStore((s) => s.view);
+  const toggleView = usePughStore((s) => s.toggleView);
   const editingHeader = usePughStore((s) => s.editingHeader);
   const editHeaderValue = usePughStore((s) => s.editHeaderValue);
   const startEditingHeader = usePughStore((s) => s.startEditingHeader);
@@ -488,6 +491,11 @@ export default function PughMatrix({
   return (
     <Theme appearance={isDark ? 'dark' : 'light'} accentColor="green" hasBackground={false}>
       <div className={`pugh-container${isDark ? ' pugh-dark' : ''}`}>
+        {view === 'chart' ? (
+          <Suspense fallback={null}>
+            <PughRadarChart isDark={isDark} />
+          </Suspense>
+        ) : (
         <Table.Root variant="surface" size="2">
           <Table.Header>
             <Table.Row>
@@ -624,7 +632,8 @@ export default function PughMatrix({
                           <label>
                             Min
                             <input
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
                               aria-label={`Scale min for ${criterion.label}`}
                               className="pugh-scale-input"
                               value={editHeaderScaleMin}
@@ -634,7 +643,8 @@ export default function PughMatrix({
                           <label>
                             Max
                             <input
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
                               aria-label={`Scale max for ${criterion.label}`}
                               className="pugh-scale-input"
                               value={editHeaderScaleMax}
@@ -644,13 +654,12 @@ export default function PughMatrix({
                           <label>
                             Step
                             <input
-                              type="number"
+                              type="text"
+                              inputMode="decimal"
                               aria-label={`Scale step for ${criterion.label}`}
                               className="pugh-scale-input"
                               value={editHeaderScaleStep}
                               onChange={(e) => setEditHeaderScaleStep(e.target.value)}
-                              min="0.01"
-                              step="any"
                             />
                           </label>
                         </div>
@@ -781,11 +790,14 @@ export default function PughMatrix({
                           className="pugh-quick-edit"
                           onClick={(e) => e.stopPropagation()}
                         >
+                          <span className="pugh-edit-hint">
+                            Enter a rating or comment
+                          </span>
                           {scale.kind === 'binary' ? (
                             <label className="pugh-binary-toggle">
                               <input
                                 type="checkbox"
-                                aria-label={`Score for ${option.label}, ${criterion.label}`}
+                                aria-label={`Rating for ${option.label}, ${criterion.label}`}
                                 checked={editScore === '1'}
                                 onChange={(e) => setEditScore(e.target.checked ? '1' : '0')}
                                 onKeyDown={handleQuickEditKeyDown}
@@ -799,10 +811,10 @@ export default function PughMatrix({
                               inputMode="decimal"
                               placeholder={
                                 scale.kind === 'unbounded'
-                                  ? '0+'
-                                  : `${scale.min}–${scale.max}`
+                                  ? 'Count (e.g. 228000)'
+                                  : `Rating ${scale.min} to ${scale.max}${scale.step !== 1 ? ` (step ${scale.step})` : ''}`
                               }
-                              aria-label={`Score for ${option.label}, ${criterion.label}`}
+                              aria-label={`Rating for ${option.label}, ${criterion.label}`}
                               value={editScore}
                               onChange={(e) => handleEditScoreChange(e.target.value)}
                               onKeyDown={handleQuickEditKeyDown}
@@ -913,29 +925,41 @@ export default function PughMatrix({
             )}
           </Table.Body>
         </Table.Root>
+        )}
         {!effectiveReadOnly && (
           <>
             <button
               className="pugh-toggle-button"
-              onClick={toggleWeights}
+              onClick={toggleView}
               type="button"
             >
-              {showWeights ? 'Hide Weights' : 'Show Weights'}
+              {view === 'table' ? 'Show Chart' : 'Show Table'}
             </button>
-            <button
-              className="pugh-toggle-button"
-              onClick={toggleTotals}
-              type="button"
-            >
-              {showTotals ? 'Hide Totals' : 'Show Totals'}
-            </button>
-            <button
-              className="pugh-toggle-button"
-              onClick={toggleLabels}
-              type="button"
-            >
-              {showLabels ? 'Hide Labels' : 'Show Labels'}
-            </button>
+            {view === 'table' && (
+              <>
+                <button
+                  className="pugh-toggle-button"
+                  onClick={toggleWeights}
+                  type="button"
+                >
+                  {showWeights ? 'Hide Weights' : 'Show Weights'}
+                </button>
+                <button
+                  className="pugh-toggle-button"
+                  onClick={toggleTotals}
+                  type="button"
+                >
+                  {showTotals ? 'Hide Totals' : 'Show Totals'}
+                </button>
+                <button
+                  className="pugh-toggle-button"
+                  onClick={toggleLabels}
+                  type="button"
+                >
+                  {showLabels ? 'Hide Labels' : 'Show Labels'}
+                </button>
+              </>
+            )}
           </>
         )}
         <Dialog.Root open={customLabelDrawerOpen} onOpenChange={(open) => { if (!open) setCustomLabelDrawerOpen(false); }}>
@@ -958,8 +982,8 @@ export default function PughMatrix({
                   <Dialog.Title>{isCustom ? 'Custom Labels' : 'Label Preview'}</Dialog.Title>
                   <Dialog.Description size="2">
                     {isCustom
-                      ? 'Define labels for each score value. Min and max labels are required. Unlabeled scores round down to the nearest labeled value.'
-                      : 'Preview the labels for this set. Edit any value to create a custom set. Unlabeled scores round down to the nearest labeled value.'}
+                      ? 'Define labels for each rating value. Min and max labels are required. Unlabeled ratings round down to the nearest labeled value.'
+                      : 'Unlabeled ratings round down to the nearest labeled value.'}
                   </Dialog.Description>
                   <div className="pugh-custom-label-list">
                     {values.map((v) => {
@@ -970,38 +994,54 @@ export default function PughMatrix({
                             {v}
                             {isCustom && isEndpoint && <span className="pugh-custom-label-required">*</span>}
                           </span>
-                          <input
-                            type="text"
-                            className="pugh-edit-input"
-                            aria-label={`Label for score ${v}`}
-                            placeholder={isCustom && isEndpoint ? 'Required' : 'Optional'}
-                            value={editCustomLabels[v] ?? ''}
-                            onChange={(e) => setEditCustomLabel(v, e.target.value)}
-                          />
+                          {isCustom ? (
+                            <input
+                              type="text"
+                              className="pugh-edit-input"
+                              aria-label={`Label for rating ${v}`}
+                              placeholder={isEndpoint ? 'Required' : 'Optional'}
+                              value={editCustomLabels[v] ?? ''}
+                              onChange={(e) => setEditCustomLabel(v, e.target.value)}
+                            />
+                          ) : (
+                            <span className="pugh-label-preview">
+                              {editCustomLabels[v] || '—'}
+                            </span>
+                          )}
                         </div>
                       );
                     })}
                   </div>
                   <div className="pugh-custom-label-actions">
-                    <button
-                      type="button"
-                      className="pugh-clear-button"
-                      disabled={Object.keys(editCustomLabels).length === 0}
-                      onClick={() => {
-                        for (const v of values) {
-                          setEditCustomLabel(v, '');
-                        }
-                      }}
-                    >
-                      Clear All
-                    </button>
+                    {isCustom && (
+                      <button
+                        type="button"
+                        className="pugh-clear-button"
+                        disabled={Object.keys(editCustomLabels).length === 0}
+                        onClick={() => {
+                          for (const v of values) {
+                            setEditCustomLabel(v, '');
+                          }
+                        }}
+                      >
+                        Clear All
+                      </button>
+                    )}
                     <div className="pugh-edit-actions">
-                      <button type="button" disabled={!isValid} onClick={applyCustomLabels}>
-                        {isCustom ? 'Apply' : 'Apply as Custom'}
-                      </button>
-                      <button type="button" onClick={() => setCustomLabelDrawerOpen(false)}>
-                        {isCustom ? 'Cancel' : 'Close'}
-                      </button>
+                      {isCustom ? (
+                        <>
+                          <button type="button" disabled={!isValid} onClick={applyCustomLabels}>
+                            Apply
+                          </button>
+                          <button type="button" onClick={() => setCustomLabelDrawerOpen(false)}>
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <button type="button" onClick={() => setCustomLabelDrawerOpen(false)}>
+                          Close
+                        </button>
+                      )}
                     </div>
                   </div>
                 </>

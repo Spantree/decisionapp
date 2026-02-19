@@ -1,0 +1,44 @@
+# Use Zustand for State Management
+
+- Status: accepted
+- Deciders: eitah
+- Date: 2026-02-13
+
+Technical Story: `243f572` - feat: Zustand store with swappable persistence layer (#4)
+
+## Context and Problem Statement
+
+The Pugh Matrix component needed to manage complex state: criteria, options, scores, weights, UI toggles, and persistence. Initially a controlled-props API was tried (passing state and callbacks from the parent), but the prop surface area grew unwieldy. How should internal state be managed?
+
+## Decision Drivers
+
+- Minimal boilerplate for a medium-complexity domain model
+- DevTools integration for debugging state changes
+- Context-scoped stores (multiple matrices on one page)
+- Ability to swap persistence backends (memory for tests, localStorage for production)
+
+## Considered Options
+
+- Controlled props (tried and reverted)
+- React Context + useReducer
+- Zustand with context provider pattern
+- Redux Toolkit
+- Jotai
+
+## Decision Outcome
+
+Chosen option: "Zustand with context provider pattern", because it provides a minimal API (`createPughStore` factory + `PughStoreProvider` + `usePughStore` hook with selectors), supports middleware (devtools, persistence), and works well with the context provider pattern for scoped instances.
+
+Every `set()` call includes a descriptive action name (e.g., `'event/RatingAssigned'`, `'toggleTotals'`) for Redux DevTools inspection.
+
+### Positive Consequences
+
+- Store-only API is simpler than dual controlled/uncontrolled mode
+- DevTools middleware enables time-travel debugging
+- `createPughStore()` factory allows multiple independent instances
+- Selector pattern prevents unnecessary re-renders
+
+### Negative Consequences
+
+- Store-only means consumers cannot drive the component via props (intentional simplification)
+- Zustand is a runtime dependency, though it is small (~1KB)

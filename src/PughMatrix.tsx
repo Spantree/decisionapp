@@ -142,10 +142,7 @@ export default function PughMatrix({
 
       for (const entry of ratings) {
         if (!optionSet.has(entry.optionId) || !criterionSet.has(entry.criterionId)) {
-          throw new Error(
-            `PughMatrix: rating entry "${entry.id}" references invalid option "${entry.optionId}" or criterion "${entry.criterionId}". ` +
-            `Allowed options: [${options.map((t) => t.id).join(', ')}]. Allowed criteria: [${criteria.map((c) => c.id).join(', ')}].`,
-          );
+          continue; // skip orphaned ratings (e.g. stale data)
         }
         const key = `${entry.optionId}\0${entry.criterionId}`;
         const arr = history.get(key) ?? [];

@@ -336,7 +336,10 @@ export default function PughMatrix({
     } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       openDetailModal();
-    } else if (e.key === 'Enter' || e.key === 'ArrowDown') {
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      handleEditSave();
+    } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       saveAndNavigate('down');
     } else if (e.key === 'ArrowUp') {
@@ -807,16 +810,14 @@ export default function PughMatrix({
                               autoFocus
                             />
                           )}
-                          {(entry?.label || entry?.comment) && (
-                            <button
-                              type="button"
-                              className="pugh-expand-button"
-                              aria-label="Edit details"
-                              onClick={openDetailModal}
-                            >
-                              ⋯
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            className="pugh-expand-button"
+                            aria-label="Edit details"
+                            onClick={openDetailModal}
+                          >
+                            ⋯
+                          </button>
                         </div>
                       ) : history && history.length > 0 ? (
                         <HoverCard.Root>

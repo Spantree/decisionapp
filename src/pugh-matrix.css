@@ -911,6 +911,23 @@
   min-width: 0;
 }
 
+.pugh-custom-label-drawer .pugh-custom-label-row input[type="text"] {
+  border: 1px solid #999;
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  background: #fff;
+  color: #1c1e21;
+  min-height: 1.8rem;
+  box-sizing: border-box;
+}
+
+.pugh-dark .pugh-custom-label-drawer .pugh-custom-label-row input[type="text"] {
+  border-color: #666;
+  background: #2a2a2a;
+  color: #e3e3e3;
+}
+
 .pugh-label-preview {
   flex: 1;
   min-width: 0;

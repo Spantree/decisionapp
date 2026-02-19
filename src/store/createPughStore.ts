@@ -316,6 +316,7 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
       editHeaderDescription: '',
       customLabelDrawerOpen: false,
       editCustomLabels: {},
+      detailModalOpen: false,
 
       // Domain actions (thin wrappers around dispatch)
       addRating: (entry: RatingEntry) => {
@@ -512,6 +513,113 @@ export function createPughStore(options: CreatePughStoreOptions = {}) {
           editHeaderLabelSetId: CUSTOM_LABEL_SET_ID,
           customLabelDrawerOpen: false,
         }, false, 'applyCustomLabels');
+      },
+      startEditingWithPreFill: (optionId: string, criterionId: string) => {
+        const state = get();
+        const latest = state.ratings
+          .filter((r) => r.optionId === optionId && r.criterionId === criterionId && r.value != null)
+          .sort((a, b) => b.timestamp - a.timestamp)[0];
+        set({
+          editingCell: { optionId, criterionId },
+          editScore: latest?.value != null ? String(latest.value) : '',
+          editLabel: latest?.label ?? '',
+          editComment: '',
+        }, false, { type: 'startEditingWithPreFill', optionId, criterionId });
+      },
+      saveAndNavigate: (direction: 'right' | 'left' | 'down' | 'up') => {
+        const state = get();
+        if (!state.editingCell) return;
+        const { optionId: curOptId, criterionId: curCritId } = state.editingCell;
+
+        // Find scale for current cell to validate
+        const curCriterion = state.criteria.find((c) => c.id === curCritId);
+        if (!curCriterion) return;
+        const curScale = getEffectiveScale(curCriterion, state.matrixConfig.defaultScale);
+
+        // Validate and save current cell
+        const scoreNum = state.editScore && state.editScore !== '-' ? Number(state.editScore) : undefined;
+        if (scoreNum != null) {
+          if (curScale.kind === 'unbounded') {
+            if (isNaN(scoreNum) || scoreNum < 0) return;
+          } else if (curScale.kind === 'numeric') {
+            if (isNaN(scoreNum) || scoreNum < curScale.min || scoreNum > curScale.max) return;
+          } else if (curScale.kind === 'binary') {
+            if (scoreNum !== 0 && scoreNum !== 1) return;
+          }
+        }
+        const trimmedLabel = state.editLabel.trim() || undefined;
+        // Only save if there's a score value
+        if (scoreNum != null) {
+          state.dispatch(
+            makeEvent('RatingAssigned', {
+              optionId: curOptId,
+              criterionId: curCritId,
+              value: scoreNum,
+              label: trimmedLabel,
+              comment: undefined,
+              user: 'anonymous',
+            }, state.activeBranch),
+          );
+        }
+
+        // Compute next cell
+        const optionIds = state.options.map((o) => o.id);
+        const criterionIds = state.criteria.map((c) => c.id);
+        const curOptIdx = optionIds.indexOf(curOptId);
+        const curCritIdx = criterionIds.indexOf(curCritId);
+        let nextOptIdx = curOptIdx;
+        let nextCritIdx = curCritIdx;
+
+        if (direction === 'right') {
+          nextOptIdx = curOptIdx + 1;
+          if (nextOptIdx >= optionIds.length) {
+            nextOptIdx = 0;
+            nextCritIdx = curCritIdx + 1;
+            if (nextCritIdx >= criterionIds.length) {
+              nextCritIdx = 0;
+            }
+          }
+        } else if (direction === 'left') {
+          nextOptIdx = curOptIdx - 1;
+          if (nextOptIdx < 0) {
+            nextOptIdx = optionIds.length - 1;
+            nextCritIdx = curCritIdx - 1;
+            if (nextCritIdx < 0) {
+              nextCritIdx = criterionIds.length - 1;
+            }
+          }
+        } else if (direction === 'down') {
+          nextCritIdx = curCritIdx + 1;
+          if (nextCritIdx >= criterionIds.length) {
+            nextCritIdx = 0;
+          }
+        } else if (direction === 'up') {
+          nextCritIdx = curCritIdx - 1;
+          if (nextCritIdx < 0) {
+            nextCritIdx = criterionIds.length - 1;
+          }
+        }
+
+        const nextOptId = optionIds[nextOptIdx];
+        const nextCritId = criterionIds[nextCritIdx];
+        // Use startEditingWithPreFill on the next cell
+        state.startEditingWithPreFill(nextOptId, nextCritId);
+      },
+      openDetailModal: () => {
+        const state = get();
+        if (!state.editingCell) return;
+        const { optionId, criterionId } = state.editingCell;
+        const latest = state.ratings
+          .filter((r) => r.optionId === optionId && r.criterionId === criterionId && r.value != null)
+          .sort((a, b) => b.timestamp - a.timestamp)[0];
+        set({
+          detailModalOpen: true,
+          editLabel: latest?.label ?? '',
+          editComment: latest?.comment ?? '',
+        }, false, 'openDetailModal');
+      },
+      closeDetailModal: () => {
+        set({ detailModalOpen: false }, false, 'closeDetailModal');
       },
       saveHeaderEdit: () => {
         const state = get();

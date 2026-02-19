@@ -77,6 +77,26 @@ function pickColor(
   return gradient[clamped];
 }
 
+function cellFillStyle(
+  hasScore: boolean,
+  gradientIndex: number,
+  isDark: boolean,
+  editable: boolean,
+): React.CSSProperties {
+  if (hasScore) {
+    const { bg, text } = pickColor(gradientIndex, isDark);
+    return { backgroundColor: bg, color: text };
+  }
+  if (editable) {
+    return {
+      backgroundColor: isDark ? '#3a3a44' : '#d9d9e0',
+      color: 'inherit',
+      border: `1px dashed ${isDark ? '#56565e' : '#b0b0b8'}`,
+    };
+  }
+  return {};
+}
+
 function formatDate(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString('en-US', {
     month: 'short',
@@ -159,6 +179,11 @@ export default function PughMatrix({
   const applyCustomLabels = usePughStore((s) => s.applyCustomLabels);
   const editHeaderDescription = usePughStore((s) => s.editHeaderDescription);
   const setEditHeaderDescription = usePughStore((s) => s.setEditHeaderDescription);
+  const detailModalOpen = usePughStore((s) => s.detailModalOpen);
+  const openDetailModal = usePughStore((s) => s.openDetailModal);
+  const closeDetailModal = usePughStore((s) => s.closeDetailModal);
+  const saveAndNavigate = usePughStore((s) => s.saveAndNavigate);
+  const startEditingWithPreFill = usePughStore((s) => s.startEditingWithPreFill);
 
   const isMobile = useIsMobile();
   const effectiveReadOnly = readOnly || isMobile;
@@ -302,12 +327,27 @@ export default function PughMatrix({
     cancelEditing();
   };
 
-  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+  const handleQuickEditKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       cancelEditing();
-    } else if (e.key === 'Enter' && !e.shiftKey) {
+    } else if (e.key === 'Tab') {
       e.preventDefault();
-      handleEditSave();
+      saveAndNavigate(e.shiftKey ? 'left' : 'right');
+    } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      openDetailModal();
+    } else if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      saveAndNavigate('down');
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      saveAndNavigate('up');
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      saveAndNavigate('right');
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      saveAndNavigate('left');
     }
   };
 
@@ -718,15 +758,10 @@ export default function PughMatrix({
                     }
                   }
 
-                  // Color
-                  let colors: { bg: string; text: string };
-                  if (hasScore) {
-                    const normalized = normalizeScore(score, scale, critScores, matrixConfig.allowNegative);
-                    const gradientIdx = getScoreColor(normalized, matrixConfig.allowNegative);
-                    colors = pickColor(gradientIdx, isDark);
-                  } else {
-                    colors = { bg: 'transparent', text: 'inherit' };
-                  }
+                  const gradientIdx = hasScore
+                    ? getScoreColor(normalizeScore(score, scale, critScores, matrixConfig.allowNegative), matrixConfig.allowNegative)
+                    : 0;
+                  const fillStyle = cellFillStyle(hasScore, gradientIdx, isDark, !effectiveReadOnly);
 
                   const history = historyByCell.get(cellKey);
                   const editing = isEditing(option.id, criterion.id);
@@ -735,23 +770,14 @@ export default function PughMatrix({
                     <Table.Cell
                       key={option.id}
                       className={`pugh-rating-cell${!effectiveReadOnly ? ' pugh-rating-cell-editable' : ''}${isWinner(option.id) ? ' pugh-winner-cell' : isHighlighted(option.id) ? ' pugh-highlight-cell' : ''}`}
-                      onClick={effectiveReadOnly ? undefined : () => startEditing(option.id, criterion.id)}
+                      onClick={effectiveReadOnly ? undefined : () => startEditingWithPreFill(option.id, criterion.id)}
                     >
-                      <div
-                        className="pugh-rating-fill"
-                        style={{
-                          backgroundColor: colors.bg,
-                          color: colors.text,
-                        }}
-                      >
+                      <div className="pugh-rating-fill" style={fillStyle}>
                       {editing ? (
                         <div
-                          className="pugh-edit-form"
+                          className="pugh-quick-edit"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <span className="pugh-edit-hint">
-                            Enter a score or comment
-                          </span>
                           {scale.kind === 'binary' ? (
                             <label className="pugh-binary-toggle">
                               <input
@@ -759,7 +785,7 @@ export default function PughMatrix({
                                 aria-label={`Score for ${option.label}, ${criterion.label}`}
                                 checked={editScore === '1'}
                                 onChange={(e) => setEditScore(e.target.checked ? '1' : '0')}
-                                onKeyDown={handleEditKeyDown}
+                                onKeyDown={handleQuickEditKeyDown}
                                 autoFocus
                               />
                               {editScore === '1' ? 'Yes' : 'No'}
@@ -770,49 +796,27 @@ export default function PughMatrix({
                               inputMode="decimal"
                               placeholder={
                                 scale.kind === 'unbounded'
-                                  ? 'Count (e.g. 228000)'
-                                  : `Score ${scale.min} to ${scale.max}${scale.step !== 1 ? ` (step ${scale.step})` : ''}`
+                                  ? '0+'
+                                  : `${scale.min}–${scale.max}`
                               }
                               aria-label={`Score for ${option.label}, ${criterion.label}`}
                               value={editScore}
                               onChange={(e) => handleEditScoreChange(e.target.value)}
-                              onKeyDown={handleEditKeyDown}
-                              className="pugh-edit-input"
+                              onKeyDown={handleQuickEditKeyDown}
+                              className="pugh-quick-edit-input"
                               autoFocus
                             />
                           )}
-                          {scale.kind === 'numeric' && (
-                            <input
-                              type="text"
-                              placeholder={
-                                scale.labels && editScore && scale.labels[Number(editScore)]
-                                  ? `Label (default: ${scale.labels[Number(editScore)]})`
-                                  : 'Label (optional)'
-                              }
-                              aria-label={`Label for ${option.label}, ${criterion.label}`}
-                              value={editLabel}
-                              onChange={(e) => setEditLabel(e.target.value)}
-                              onKeyDown={handleEditKeyDown}
-                              className="pugh-edit-input"
-                            />
+                          {(entry?.label || entry?.comment) && (
+                            <button
+                              type="button"
+                              className="pugh-expand-button"
+                              aria-label="Edit details"
+                              onClick={openDetailModal}
+                            >
+                              ⋯
+                            </button>
                           )}
-                          <textarea
-                            placeholder="Comment (optional)"
-                            aria-label={`Comment for ${option.label}, ${criterion.label}`}
-                            value={editComment}
-                            onChange={(e) => setEditComment(e.target.value)}
-                            onKeyDown={handleEditKeyDown}
-                            className="pugh-edit-comment"
-                            rows={2}
-                          />
-                          <div className="pugh-edit-actions">
-                            <button type="button" onClick={handleEditSave}>
-                              Save
-                            </button>
-                            <button type="button" onClick={cancelEditing}>
-                              Cancel
-                            </button>
-                          </div>
                         </div>
                       ) : history && history.length > 0 ? (
                         <HoverCard.Root>
@@ -996,6 +1000,78 @@ export default function PughMatrix({
                       </button>
                       <button type="button" onClick={() => setCustomLabelDrawerOpen(false)}>
                         {isCustom ? 'Cancel' : 'Close'}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </Dialog.Content>
+        </Dialog.Root>
+        <Dialog.Root open={detailModalOpen} onOpenChange={(open) => { if (!open) closeDetailModal(); }}>
+          <Dialog.Content className="pugh-detail-modal">
+            {editingCell && editingCriterion && editingScale && (() => {
+              const opt = options.find((o) => o.id === editingCell.optionId);
+              return (
+                <>
+                  <Dialog.Title>
+                    Edit Rating: {editingCriterion.label} / {opt?.label ?? ''}
+                  </Dialog.Title>
+                  <div className="pugh-detail-form">
+                    {editingScale.kind === 'binary' ? (
+                      <label className="pugh-binary-toggle">
+                        <input
+                          type="checkbox"
+                          aria-label="Score"
+                          checked={editScore === '1'}
+                          onChange={(e) => setEditScore(e.target.checked ? '1' : '0')}
+                        />
+                        {editScore === '1' ? 'Yes' : 'No'}
+                      </label>
+                    ) : (
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder={
+                          editingScale.kind === 'unbounded'
+                            ? 'Count (e.g. 228000)'
+                            : `Score ${editingScale.min} to ${editingScale.max}`
+                        }
+                        aria-label="Score"
+                        value={editScore}
+                        onChange={(e) => handleEditScoreChange(e.target.value)}
+                        className="pugh-edit-input"
+                        autoFocus
+                      />
+                    )}
+                    {editingScale.kind === 'numeric' && (
+                      <input
+                        type="text"
+                        placeholder={
+                          editingScale.labels && editScore && editingScale.labels[Number(editScore)]
+                            ? `Label (default: ${editingScale.labels[Number(editScore)]})`
+                            : 'Label (optional)'
+                        }
+                        aria-label="Label"
+                        value={editLabel}
+                        onChange={(e) => setEditLabel(e.target.value)}
+                        className="pugh-edit-input"
+                      />
+                    )}
+                    <textarea
+                      placeholder="Comment (optional)"
+                      aria-label="Comment"
+                      value={editComment}
+                      onChange={(e) => setEditComment(e.target.value)}
+                      className="pugh-edit-comment"
+                      rows={3}
+                    />
+                    <div className="pugh-edit-actions">
+                      <button type="button" onClick={() => { handleEditSave(); closeDetailModal(); }}>
+                        Save
+                      </button>
+                      <button type="button" onClick={closeDetailModal}>
+                        Cancel
                       </button>
                     </div>
                   </div>

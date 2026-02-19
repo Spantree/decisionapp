@@ -59,12 +59,14 @@
 .pugh-rating-fill {
   border-radius: 6px;
   padding: 0.35rem 0.5rem;
+  min-height: 1.8rem;
   transition: background-color 0.15s ease;
 }
 
 .pugh-rating-cell-editable {
   cursor: pointer;
 }
+
 
 .pugh-rating-trigger {
   display: block;
@@ -116,19 +118,62 @@
   outline-offset: -1px;
 }
 
-/* Edit form */
-.pugh-edit-form {
+/* Quick-edit inline (replaces old .pugh-edit-form) */
+.pugh-quick-edit {
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  padding: 0.25rem;
+  align-items: center;
+  gap: 0.2rem;
+  margin: -0.15rem -0.25rem;
 }
 
-.pugh-edit-hint {
-  font-size: 0.7rem;
+.pugh-quick-edit-input {
+  width: 3.2rem;
+  box-sizing: border-box;
+  padding: 0.15rem 0.1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  border: 1.5px solid var(--pugh-primary);
+  border-radius: 4px;
+  background: var(--pugh-bg);
   color: var(--pugh-text);
-  opacity: 0.6;
-  line-height: 1.2;
+}
+
+.pugh-quick-edit-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 1.5px rgba(46, 133, 85, 0.3);
+}
+
+.pugh-expand-button {
+  flex-shrink: 0;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.85rem;
+  line-height: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--pugh-text);
+  opacity: 0.5;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.pugh-expand-button:hover {
+  opacity: 1;
+  background: var(--pugh-head-bg);
+  border-color: var(--pugh-border-color);
+}
+
+/* Detail modal */
+.pugh-detail-modal {
+  max-width: 420px;
+}
+
+.pugh-detail-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 .pugh-edit-input {

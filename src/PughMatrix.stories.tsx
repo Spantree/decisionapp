@@ -611,7 +611,7 @@ const ratingsForDesc: RatingEntry[] = [
   entry('angular', 'docs', 8, t1),
 ];
 
-/** Criteria and options with markdown descriptions — hover the ℹ icon to see rendered content. */
+/** Criteria and options with markdown descriptions — truncated previews shown inline, hover to see full rendered content. */
 export const WithDescriptions: Story = {
   render: () => {
     const store = useMemo(

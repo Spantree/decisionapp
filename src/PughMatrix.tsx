@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dialog, HoverCard, Table, Theme } from '@radix-ui/themes';
 import {
   red, tomato, amber, yellow, lime, grass, green,
@@ -10,6 +10,30 @@ import Markdown from './Markdown';
 import { usePughStore } from './store/usePughStore';
 import { ratingId, optionId, criterionId } from './ids';
 import './pugh-matrix.css';
+
+function useIsMobile(): boolean {
+  const [mobile, setMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches,
+  );
+  useEffect(() => {
+    const mql = window.matchMedia('(pointer: coarse)');
+    const handler = (e: MediaQueryListEvent) => setMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+  return mobile;
+}
+
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/[*_~`#>]/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+    .replace(/\n+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/^-\s+/gm, '')
+    .trim();
+}
 
 export interface PughMatrixProps {
   highlight?: string;
@@ -135,6 +159,9 @@ export default function PughMatrix({
   const applyCustomLabels = usePughStore((s) => s.applyCustomLabels);
   const editHeaderDescription = usePughStore((s) => s.editHeaderDescription);
   const setEditHeaderDescription = usePughStore((s) => s.setEditHeaderDescription);
+
+  const isMobile = useIsMobile();
+  const effectiveReadOnly = readOnly || isMobile;
 
   const { latestByCell, historyByCell, weightedTotals, maxTotal, winner, allScoresByCriterion } =
     useMemo(() => {
@@ -426,8 +453,8 @@ export default function PughMatrix({
               {options.map((option) => (
                 <Table.ColumnHeaderCell
                   key={option.id}
-                  className={`pugh-option-header${!readOnly ? ' pugh-header-editable' : ''}${isWinner(option.id) ? ' pugh-winner-header' : isHighlighted(option.id) ? ' pugh-highlight-header' : ''}`}
-                  onClick={readOnly ? undefined : () => startEditingHeader('option', option.id)}
+                  className={`pugh-option-header${!effectiveReadOnly ? ' pugh-header-editable' : ''}${isWinner(option.id) ? ' pugh-winner-header' : isHighlighted(option.id) ? ' pugh-highlight-header' : ''}`}
+                  onClick={effectiveReadOnly ? undefined : () => startEditingHeader('option', option.id)}
                 >
                   {isEditingHeaderCell('option', option.id) ? (
                     <div className="pugh-header-edit-col" onClick={(e) => e.stopPropagation()}>
@@ -465,18 +492,15 @@ export default function PughMatrix({
                       </div>
                     </div>
                   ) : (
-                    <span className="pugh-header-label-row">
-                      {isWinner(option.id) ? `👑 ${option.label}` : option.label}
+                    <span className="pugh-header-label-col">
+                      <span className="pugh-header-label-text">
+                        {isWinner(option.id) ? `👑 ${option.label}` : option.label}
+                      </span>
                       {option.description && (
                         <HoverCard.Root>
                           <HoverCard.Trigger>
-                            <span
-                              className="pugh-description-icon"
-                              onClick={(e) => e.stopPropagation()}
-                              role="button"
-                              aria-label={`Info for ${option.label}`}
-                            >
-                              ℹ
+                            <span className="pugh-description-inline" onClick={(e) => e.stopPropagation()}>
+                              {stripMarkdown(option.description)}
                             </span>
                           </HoverCard.Trigger>
                           <HoverCard.Content size="2" maxWidth="320px">
@@ -488,7 +512,7 @@ export default function PughMatrix({
                   )}
                 </Table.ColumnHeaderCell>
               ))}
-              {!readOnly && (
+              {!effectiveReadOnly && (
                 <Table.ColumnHeaderCell className="pugh-add-cell">
                   <button
                     type="button"
@@ -508,8 +532,8 @@ export default function PughMatrix({
               return (
               <Table.Row key={criterion.id}>
                 <Table.RowHeaderCell
-                  className={`pugh-criterion-cell${!readOnly ? ' pugh-header-editable' : ''}`}
-                  onClick={readOnly ? undefined : () => startEditingHeader('criterion', criterion.id)}
+                  className={`pugh-criterion-cell${!effectiveReadOnly ? ' pugh-header-editable' : ''}`}
+                  onClick={effectiveReadOnly ? undefined : () => startEditingHeader('criterion', criterion.id)}
                 >
                   {isEditingHeaderCell('criterion', criterion.id) ? (
                     <div className="pugh-header-edit-col" onClick={(e) => e.stopPropagation()}>
@@ -642,18 +666,13 @@ export default function PughMatrix({
                       </div>
                     </div>
                   ) : (
-                    <span className="pugh-header-label-row">
-                      {criterion.label}
+                    <span className="pugh-header-label-col">
+                      <span className="pugh-header-label-text">{criterion.label}</span>
                       {criterion.description && (
                         <HoverCard.Root>
                           <HoverCard.Trigger>
-                            <span
-                              className="pugh-description-icon"
-                              onClick={(e) => e.stopPropagation()}
-                              role="button"
-                              aria-label={`Info for ${criterion.label}`}
-                            >
-                              ℹ
+                            <span className="pugh-description-inline" onClick={(e) => e.stopPropagation()}>
+                              {stripMarkdown(criterion.description)}
                             </span>
                           </HoverCard.Trigger>
                           <HoverCard.Content size="2" maxWidth="320px">
@@ -674,7 +693,7 @@ export default function PughMatrix({
                       value={weights[criterion.id]}
                       onChange={(e) => handleWeightChange(criterion.id, e.target.value)}
                       className="pugh-weight-input"
-                      readOnly={readOnly}
+                      readOnly={effectiveReadOnly}
                     />
                   </Table.Cell>
                 )}
@@ -715,8 +734,8 @@ export default function PughMatrix({
                   return (
                     <Table.Cell
                       key={option.id}
-                      className={`pugh-rating-cell${!readOnly ? ' pugh-rating-cell-editable' : ''}${isWinner(option.id) ? ' pugh-winner-cell' : isHighlighted(option.id) ? ' pugh-highlight-cell' : ''}`}
-                      onClick={readOnly ? undefined : () => startEditing(option.id, criterion.id)}
+                      className={`pugh-rating-cell${!effectiveReadOnly ? ' pugh-rating-cell-editable' : ''}${isWinner(option.id) ? ' pugh-winner-cell' : isHighlighted(option.id) ? ' pugh-highlight-cell' : ''}`}
+                      onClick={effectiveReadOnly ? undefined : () => startEditing(option.id, criterion.id)}
                     >
                       <div
                         className="pugh-rating-fill"
@@ -840,7 +859,7 @@ export default function PughMatrix({
                     </Table.Cell>
                   );
                 })}
-                {!readOnly && <Table.Cell />}
+                {!effectiveReadOnly && <Table.Cell />}
               </Table.Row>
               );
             })}
@@ -870,10 +889,10 @@ export default function PughMatrix({
                     </Table.Cell>
                   );
                 })}
-                {!readOnly && <Table.Cell />}
+                {!effectiveReadOnly && <Table.Cell />}
               </Table.Row>
             )}
-            {!readOnly && (
+            {!effectiveReadOnly && (
               <Table.Row>
                 <Table.Cell colSpan={options.length + (showWeights ? 3 : 2)} className="pugh-add-cell">
                   <button
@@ -889,7 +908,7 @@ export default function PughMatrix({
             )}
           </Table.Body>
         </Table.Root>
-        {!readOnly && (
+        {!effectiveReadOnly && (
           <>
             <button
               className="pugh-toggle-button"
